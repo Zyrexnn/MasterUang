@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useNotifications } from '../composables/useNotifications'
 import { supabase } from '../composables/useSupabase'
 import { 
@@ -106,13 +106,42 @@ const isCodeUsed = (codeStr: string) => {
 }
 
 const getUserForCode = (codeStr: string) => {
-  return profiles.value.find(u => u.code === codeStr)
+  if (!codeStr) return null
+  return profiles.value.find(u => u.code?.toUpperCase() === codeStr.toUpperCase())
 }
 
 const filteredCodes = computed(() => {
   if (!searchQuery.value) return codes.value
   return codes.value.filter(c => c.code.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
+
+// REMAINING TIME HELPER
+const calculateRemainingTime = (codeStr: string, defaultDuration: number, unit: string) => {
+  const user = getUserForCode(codeStr)
+  if (!user || !user.expires_at) {
+    return `${defaultDuration} ${unit === 'minutes' ? 'Menit' : unit === 'hours' ? 'Jam' : 'Hari'}`
+  }
+
+  const expiry = new Date(user.expires_at)
+  const now = new Date()
+  const diff = expiry.getTime() - now.getTime()
+
+  if (diff <= 0) return 'EXPIRED'
+
+  const totalMinutes = Math.floor(diff / (1000 * 60))
+  const totalHours = Math.floor(totalMinutes / 60)
+  const totalDays = Math.floor(totalHours / 24)
+
+  if (totalDays > 0) {
+    const remainingHours = totalHours % 24
+    return `${totalDays} Hari ${remainingHours} Jam`
+  }
+  if (totalHours > 0) {
+    const remainingMinutes = totalMinutes % 60
+    return `${totalHours} Jam ${remainingMinutes} Menit`
+  }
+  return `${totalMinutes} Menit`
+}
 
 // MODAL HANDLERS
 const openModal = (mode: 'create' | 'edit', codeData?: any) => {
@@ -163,12 +192,17 @@ const handleCodeSubmit = async () => {
       .eq('id', currentCode.value.id)
     
     // Also update profile expiry if user exists
-    const userForCode = getUserForCode(currentCode.value.code)
+    const normalizedCode = currentCode.value.code.trim().toUpperCase()
+    const userForCode = getUserForCode(normalizedCode)
+    
     if (userForCode) {
-        const newExpiry = new Date(userForCode.created_at || new Date())
+        // PERBAIKAN: Selalu gunakan created_at sebagai dasar perhitungan "TOTAL" durasi.
+        // Jika created_at tidak ada, gunakan waktu sekarang sebagai fallback untuk perpanjangan dari nol.
+        const baseDate = userForCode.created_at ? new Date(userForCode.created_at) : new Date()
         const val = currentCode.value.duration_value
         const unit = currentCode.value.duration_unit
 
+        const newExpiry = new Date(baseDate)
         if (unit === 'minutes') {
             newExpiry.setMinutes(newExpiry.getMinutes() + val)
         } else if (unit === 'hours') {
@@ -177,7 +211,10 @@ const handleCodeSubmit = async () => {
             newExpiry.setDate(newExpiry.getDate() + val)
         }
         
-        await supabase.from('profiles').update({ expires_at: newExpiry.toISOString() }).eq('code', currentCode.value.code)
+        await supabase.from('profiles').update({ 
+            expires_at: newExpiry.toISOString(),
+            role: currentCode.value.role 
+        }).eq('code', normalizedCode)
     }
 
     if (error) notifications_ui.error('Encryption Sync Failure', 'Gagal memperbarui kode: ' + error.message)
@@ -254,7 +291,12 @@ const purgeExpiredData = async () => {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  fetchData()
+  // Refresh data every 60 seconds to update remaining time and stats
+  const interval = setInterval(fetchData, 60000)
+  onUnmounted(() => clearInterval(interval))
+})
 </script>
 
 <template>
@@ -368,9 +410,11 @@ onMounted(fetchData)
                    </div>
                 </td>
                 <td class="px-8 py-5">
-                   <div class="flex items-center gap-2 text-neutral-400">
-                      <Calendar class="w-3 h-3" />
-                      <span class="text-[11px] font-black font-mono">{{ code.duration_value || code.duration_days }} {{ code.duration_unit === 'minutes' ? 'Menit' : code.duration_unit === 'hours' ? 'Jam' : 'Hari' }}</span>
+                   <div class="flex items-center gap-2" :class="getUserForCode(code.code) ? (new Date(getUserForCode(code.code).expires_at) < new Date() ? 'text-rose-500' : 'text-zen-green') : 'text-neutral-400'">
+                      <Clock class="w-3 h-3" />
+                      <span class="text-[11px] font-black font-mono">
+                        {{ calculateRemainingTime(code.code, code.duration_value || code.duration_days, code.duration_unit || 'days') }}
+                      </span>
                    </div>
                 </td>
                 <td class="px-8 py-5">
@@ -533,11 +577,14 @@ onMounted(fetchData)
                      <div class="flex items-center gap-2">
                         <Clock class="w-3.5 h-3.5 text-neutral-600" />
                         <span class="text-[10px] font-black font-mono" :class="new Date(user.expires_at) < new Date() ? 'text-rose-500' : 'text-zen-green'">
-                          {{ new Date(user.expires_at).toLocaleDateString() }}
+                          {{ calculateRemainingTime(user.code, 0, '') }}
                         </span>
                      </div>
                      <span v-if="new Date(user.expires_at) < new Date()" class="text-[7px] font-black bg-rose-500/10 text-rose-500 px-1.5 py-0.5 rounded uppercase tracking-tighter w-fit">
                         Access Revoked: Expired
+                     </span>
+                     <span v-else class="text-[7px] font-black text-neutral-600 uppercase tracking-widest">
+                        Exp: {{ new Date(user.expires_at).toLocaleDateString() }}
                      </span>
                   </div>
                   <span v-else class="text-[9px] font-black text-neutral-700 uppercase tracking-widest">Permanent</span>

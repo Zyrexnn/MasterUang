@@ -80,11 +80,13 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = null
 
         try {
+            const normalizedCode = inputCode.trim().toUpperCase()
+
             // 1. Validate the code in redeem_codes table
             const { data: codeData, error: codeError } = await supabase
                 .from('redeem_codes')
                 .select('*')
-                .eq('code', inputCode.trim())
+                .eq('code', normalizedCode)
                 .eq('is_active', true)
                 .single()
 
@@ -96,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('code', inputCode.trim())
+                .eq('code', normalizedCode)
                 .single()
 
             if (profileData) {
@@ -108,7 +110,7 @@ export const useAuthStore = defineStore('auth', () => {
 
                 // Return existing profile
                 user.value = profileData
-                await supabase.from('profiles').update({ last_login: new Date().toISOString() }).eq('code', inputCode.trim())
+                await supabase.from('profiles').update({ last_login: new Date().toISOString() }).eq('code', normalizedCode)
             } else {
                 // 3. Create new profile if first time
                 const expiryDate = new Date()
@@ -124,8 +126,8 @@ export const useAuthStore = defineStore('auth', () => {
                 }
 
                 const newProfile = {
-                    code: inputCode.trim(),
-                    username: `Operator-${inputCode.substring(0, 4)}`,
+                    code: normalizedCode,
+                    username: `Operator-${normalizedCode.substring(0, 4)}`,
                     role: codeData.role,
                     expires_at: expiryDate.toISOString()
                 }
@@ -140,7 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
                 user.value = createdProfile
             }
 
-            localStorage.setItem('masteruang_session_code', inputCode.trim())
+            localStorage.setItem('masteruang_session_code', normalizedCode)
             return true
         } catch (err: any) {
             error.value = err.message
