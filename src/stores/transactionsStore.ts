@@ -42,6 +42,76 @@ export const useTransactionsStore = defineStore('transactions', () => {
         return ((income.value - expenses.value) / income.value) * 100
     })
 
+    // Computed data for Charts
+    const categoryDistribution = computed(() => {
+        const dist: Record<string, number> = {}
+        transactions.value
+            .filter(t => t.type === 'expense')
+            .forEach(t => {
+                dist[t.category] = (dist[t.category] || 0) + Math.abs(t.amount)
+            })
+        return dist
+    })
+
+    const monthlyStats = computed(() => {
+        const stats: Record<string, { income: number, expense: number, label: string }> = {}
+
+        // Sort transactions by date first to ensure stable order
+        const sortedTransactions = [...transactions.value].sort((a, b) =>
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+        )
+
+        sortedTransactions.forEach(t => {
+            const date = new Date(t.date)
+            if (isNaN(date.getTime())) return // Skip invalid dates
+
+            // Use YYYY-MM as key for correct chronological sorting
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+            const label = date.toLocaleString('id-ID', { month: 'short', year: '2-digit' })
+
+            if (!stats[key]) {
+                stats[key] = { income: 0, expense: 0, label }
+            }
+
+            if (t.type === 'income') stats[key].income += t.amount
+            else stats[key].expense += Math.abs(t.amount)
+        })
+
+        return Object.keys(stats).sort().map(key => ({
+            key,
+            label: stats[key].label,
+            income: stats[key].income,
+            expense: stats[key].expense
+        }))
+    })
+
+    const monthlyTrends = computed(() => {
+        const stats = monthlyStats.value
+        if (stats.length === 0) return { income: '0%', expense: '0%', balance: '0%', savings: '0%' }
+
+        const current = stats[stats.length - 1]
+        const previous = stats.length > 1 ? stats[stats.length - 2] : null
+
+        const calculateChange = (curr: number, prev: number | null) => {
+            if (prev === null || prev === 0) return curr > 0 ? '+100%' : '0%'
+            const diff = ((curr - prev) / Math.abs(prev)) * 100
+            return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
+        }
+
+        const currentBalance = current.income - current.expense
+        const previousBalance = previous ? (previous.income - previous.expense) : null
+
+        const currentSavings = current.income > 0 ? ((current.income - current.expense) / current.income) * 100 : 0
+        const previousSavings = previous && previous.income > 0 ? ((previous.income - previous.expense) / previous.income) * 100 : null
+
+        return {
+            income: calculateChange(current.income, previous ? previous.income : null),
+            expense: calculateChange(current.expense, previous ? previous.expense : null),
+            balance: calculateChange(currentBalance, previousBalance),
+            savings: previousSavings !== null ? `${(currentSavings - previousSavings).toFixed(1)}%` : '0%'
+        }
+    })
+
     // Demo mode functions
     function loadDemoTransactions() {
         const saved = localStorage.getItem('demo_transactions')
@@ -63,7 +133,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
     async function fetchTransactions() {
         if (!authStore.user?.code) return
-        
+
         loading.value = true
         try {
             if (DEMO_MODE) {
@@ -181,6 +251,9 @@ export const useTransactionsStore = defineStore('transactions', () => {
         expenses,
         balance,
         savingsRate,
+        categoryDistribution,
+        monthlyStats,
+        monthlyTrends,
         fetchTransactions,
         addTransaction,
         updateTransaction,

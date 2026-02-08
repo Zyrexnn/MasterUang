@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { 
   Search, 
   Filter, 
@@ -10,8 +10,15 @@ import {
   Edit,
   Trash2,
   X,
-  Lock
+  Lock,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  CreditCard,
+  PieChart,
+  BarChart3
 } from 'lucide-vue-next'
+import { type ApexOptions } from 'apexcharts'
 import { useTransactionsStore, type Transaction } from '../stores/transactionsStore'
 import { useAuthStore } from '../stores/authStore'
 import { useRouter } from 'vue-router'
@@ -97,6 +104,83 @@ const deleteTransaction = async (id: string) => {
     }
   }
 }
+
+// CHART OPTIONS & SERIES
+const stats = computed(() => [
+  { 
+    name: 'Total Saldo', 
+    value: `Rp ${transactionsStore.balance.toLocaleString('id-ID')}`, 
+    change: transactionsStore.monthlyTrends.balance,
+    icon: Wallet, 
+    color: 'text-bloomberg-amber' 
+  },
+  { 
+    name: 'Pemasukan', 
+    value: `Rp ${transactionsStore.income.toLocaleString('id-ID')}`, 
+    change: transactionsStore.monthlyTrends.income,
+    icon: TrendingUp, 
+    color: 'text-zen-green' 
+  },
+  { 
+    name: 'Pengeluaran', 
+    value: `Rp ${transactionsStore.expenses.toLocaleString('id-ID')}`, 
+    change: transactionsStore.monthlyTrends.expense,
+    icon: TrendingDown, 
+    color: 'text-zen-red' 
+  },
+  { 
+    name: 'Rasio Tabungan', 
+    value: `${transactionsStore.savingsRate.toFixed(1)}%`, 
+    change: transactionsStore.monthlyTrends.savings,
+    icon: CreditCard, 
+    color: 'text-zen-blue' 
+  },
+])
+
+const cashFlowOptions: ApexOptions = {
+  chart: { type: 'bar', toolbar: { show: false }, background: 'transparent', foreColor: '#9CA3AF' },
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+  colors: ['#10B981', '#F43F5E'],
+  dataLabels: { enabled: false },
+  xaxis: { 
+    categories: transactionsStore.monthlyStats.map((s: any) => s.label),
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
+  grid: { borderColor: '#1F2937', strokeDashArray: 4 },
+  legend: { show: true, position: 'top', labels: { colors: '#9CA3AF' } },
+  tooltip: {
+    theme: 'dark',
+    style: { fontSize: '12px', fontFamily: 'JetBrains Mono' },
+    y: {
+      formatter: (val: number) => `Rp ${val.toLocaleString('id-ID')}`
+    }
+  }
+}
+
+const cashFlowSeries = computed(() => [
+  { name: 'Income', data: transactionsStore.monthlyStats.map((s: any) => s.income) },
+  { name: 'Expense', data: transactionsStore.monthlyStats.map((s: any) => s.expense) }
+])
+
+const categoryOptions: ApexOptions = {
+  chart: { type: 'donut', background: 'transparent' },
+  labels: Object.keys(transactionsStore.categoryDistribution),
+  colors: ['#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'],
+  stroke: { show: false },
+  dataLabels: { enabled: false },
+  legend: { position: 'bottom', labels: { colors: '#9CA3AF' } },
+  plotOptions: { pie: { donut: { size: '75%', labels: { show: true, total: { show: true, color: '#FFFFFF', label: 'Total Expense' } } } } },
+  tooltip: {
+    theme: 'dark',
+    style: { fontSize: '12px', fontFamily: 'JetBrains Mono' },
+    y: {
+      formatter: (val: number) => `Rp ${val.toLocaleString('id-ID')}`
+    }
+  }
+}
+
+const categorySeries = computed(() => Object.values(transactionsStore.categoryDistribution))
 </script>
 
 <template>
@@ -133,6 +217,54 @@ const deleteTransaction = async (id: string) => {
         >
           <component :is="authStore.isPremium ? Plus : Lock" class="w-4 h-4" /> Tambah Baru
         </button>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div v-for="stat in stats" :key="stat.name" class="terminal-card p-6 bg-[#11141D] border border-white/5 relative group overflow-hidden">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-white/[0.01] rounded-bl-full group-hover:bg-bloomberg-amber/[0.03] transition-colors"></div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="p-3 bg-white/[0.03] border border-white/5 rounded-2xl text-neutral-400 group-hover:text-bloomberg-amber group-hover:border-bloomberg-amber/20 transition-all">
+            <component :is="stat.icon" class="w-5 h-5" />
+          </div>
+          <span v-if="stat.change" class="text-[9px] font-black font-mono px-2 py-1 rounded" :class="stat.change.startsWith('+') ? 'gain-bg' : 'loss-bg'">
+            {{ stat.change }}
+          </span>
+        </div>
+        <div>
+          <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-1">{{ stat.name }}</p>
+          <h3 class="text-2xl font-black font-outfit text-white tracking-tighter truncate">{{ stat.value }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL INSIGHTS -->
+    <div v-if="authStore.isPremium" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Cash Flow Bar Chart -->
+      <div class="lg:col-span-8 terminal-card p-8 bg-[#11141D] border border-white/5">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-3">
+             <BarChart3 class="w-4 h-4 text-bloomberg-amber" /> Cash Flow Arus Kas
+          </h3>
+          <span class="text-[9px] font-black text-neutral-600 uppercase tracking-widest">Last 6 Months</span>
+        </div>
+        <div class="h-64 sm:h-80">
+          <apexchart type="bar" height="100%" :options="cashFlowOptions" :series="cashFlowSeries" />
+        </div>
+      </div>
+
+      <!-- Expense Distribution Donut -->
+      <div class="lg:col-span-4 terminal-card p-8 bg-[#11141D] border border-white/5">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-3">
+             <PieChart class="w-4 h-4 text-bloomberg-amber" /> Distribusi Pengeluaran
+          </h3>
+        </div>
+        <div class="h-64 sm:h-80 flex items-center justify-center">
+          <apexchart v-if="categorySeries.length > 0" type="donut" height="100%" width="100%" :options="categoryOptions" :series="categorySeries" />
+          <div v-else class="text-neutral-600 text-[10px] font-black uppercase text-center">No expense data available</div>
+        </div>
       </div>
     </div>
 

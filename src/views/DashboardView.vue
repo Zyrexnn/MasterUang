@@ -31,28 +31,28 @@ const stats = computed(() => [
   { 
     name: 'Total Balance', 
     value: `Rp ${transactionsStore.balance.toLocaleString('id-ID')}`, 
-    change: '+2.5%', 
+    change: transactionsStore.monthlyTrends.balance, 
     icon: Wallet, 
     color: 'text-bloomberg-amber' 
   },
   { 
     name: 'Monthly Income', 
     value: `Rp ${transactionsStore.income.toLocaleString('id-ID')}`, 
-    change: '+12%', 
+    change: transactionsStore.monthlyTrends.income, 
     icon: TrendingUp, 
     color: 'text-zen-green' 
   },
   { 
     name: 'Monthly Expenses', 
     value: `Rp ${transactionsStore.expenses.toLocaleString('id-ID')}`, 
-    change: '-4%', 
+    change: transactionsStore.monthlyTrends.expense, 
     icon: TrendingDown, 
     color: 'text-zen-red' 
   },
   { 
     name: 'Savings Rate', 
     value: `${transactionsStore.savingsRate.toFixed(1)}%`, 
-    change: '+1.2%', 
+    change: transactionsStore.monthlyTrends.savings, 
     icon: CreditCard, 
     color: 'text-zen-blue' 
   },
@@ -70,52 +70,81 @@ const recentTransactions = computed(() => {
   }))
 })
 
-const chartOptions: ApexOptions = {
-  chart: {
-    type: 'area',
-    toolbar: { show: false },
-    background: 'transparent',
-    foreColor: '#B0B0B0',
-    fontFamily: 'JetBrains Mono, monospace'
-  },
-  colors: ['#FFB74D'],
-  dataLabels: { enabled: false },
-  stroke: { curve: 'smooth', width: 2 },
-  grid: {
-    borderColor: '#2A2E37',
-    strokeDashArray: 4,
-    xaxis: { lines: { show: true } },
-    yaxis: { lines: { show: true } }
-  },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.4,
-      opacityTo: 0.1,
-      stops: [0, 90, 100]
+const chartOptions = computed<ApexOptions>(() => {
+  const categories = transactionsStore.monthlyStats.map(s => s.label)
+  
+  return {
+    chart: {
+      type: 'area',
+      toolbar: { show: false },
+      background: 'transparent',
+      foreColor: '#B0B0B0',
+      fontFamily: 'JetBrains Mono, monospace'
+    },
+    colors: ['#10B981', '#F43F5E'],
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 2 },
+    grid: {
+      borderColor: '#2A2E37',
+      strokeDashArray: 4,
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: true } }
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.4,
+        opacityTo: 0.1,
+        stops: [0, 90, 100]
+      }
+    },
+    xaxis: {
+      categories: categories.length > 0 ? categories : ['No Data'],
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => `Rp ${val.toLocaleString('id-ID')}`
+      }
+    },
+    tooltip: {
+      theme: 'dark',
+      x: { show: true },
+      style: { fontSize: '12px', fontFamily: 'JetBrains Mono' },
+      y: {
+        formatter: (val: number) => `Rp ${val.toLocaleString('id-ID')}`
+      },
+      marker: { show: true }
+    },
+    legend: {
+      show: true,
+      position: 'top',
+      horizontalAlign: 'right',
+      labels: { colors: '#B0B0B0' }
     }
-  },
-  xaxis: {
-    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-    axisBorder: { show: false },
-    axisTicks: { show: false }
-  },
-  yaxis: {
-    labels: {
-      formatter: (val: number) => `Rp ${val}M`
-    }
-  },
-  tooltip: {
-    theme: 'dark',
-    x: { show: false }
   }
-}
+})
 
-const chartSeries = [{
-  name: 'Net Worth',
-  data: [30, 32, 35, 34, 40, 42, 45]
-}]
+const chartSeries = computed(() => {
+  if (transactionsStore.monthlyStats.length === 0) {
+     return [
+       { name: 'Pemasukan', data: [0] },
+       { name: 'Pengeluaran', data: [0] }
+     ]
+  }
+  return [
+    {
+      name: 'Pemasukan',
+      data: transactionsStore.monthlyStats.map(s => s.income)
+    },
+    {
+      name: 'Pengeluaran',
+      data: transactionsStore.monthlyStats.map(s => s.expense)
+    }
+  ]
+})
 
 // CSV Export Function
 const downloadCSV = () => {
@@ -219,11 +248,19 @@ const goToTransactions = () => {
         </div>
         <div class="h-80 lg:h-[420px]">
           <apexchart 
+            v-if="transactionsStore.monthlyStats.length > 0"
+            :key="transactionsStore.monthlyStats.length"
             type="area" 
             height="100%" 
             :options="chartOptions" 
             :series="chartSeries" 
           />
+          <div v-else class="w-full h-full flex flex-col items-center justify-center border border-white/5 rounded-3xl bg-white/[0.01]">
+             <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                <TrendingUp class="w-8 h-8 text-neutral-800" />
+             </div>
+             <p class="text-[10px] font-black text-neutral-600 uppercase tracking-widest">Analisis Arus Kas Belum Tersedia</p>
+          </div>
         </div>
       </div>
 
