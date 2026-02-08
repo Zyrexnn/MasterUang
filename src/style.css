@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-[#0B0E11] text-text-primary font-sans antialiased overflow-x-hidden;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(251, 191, 36, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(251, 191, 36, 0.02) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Zen Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-sans tracking-tight;
+}
+
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Custom scrollbar for Bloomberg feel */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-[#0B0E11];
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-bloomberg-amber/40 transition-all;
+}
+
+/* Bloomberg Terminal Effects */
+.terminal-card {
+  @apply bg-[#161A1E] border border-white/[0.05] rounded-lg shadow-2xl transition-all duration-300;
+}
+
+.terminal-card:hover {
+  @apply border-white/10;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.zen-glass {
+  @apply bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.bloomberg-glow {
+  @apply relative overflow-hidden;
+}
+
+.bloomberg-glow::after {
+  content: '';
+  @apply absolute top-0 left-0 w-full h-full pointer-events-none;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, transparent 100%);
+}
+
+/* Gain/Loss Zentimacy */
+.gain-text {
+  @apply text-[#0ECB81];
+}
+
+.loss-text {
+  @apply text-[#F6465D];
+}
+
+.gain-bg {
+  @apply bg-[#0ECB81]/10 text-[#0ECB81] border border-[#0ECB81]/20;
+}
+
+.loss-bg {
+  @apply bg-[#F6465D]/10 text-[#F6465D] border border-[#F6465D]/20;
+}
+
+/* Interactive Zen Elements */
+.zen-btn-primary {
+  @apply bg-bloomberg-amber text-black font-bold py-2.5 px-6 rounded-lg transition-all active:scale-[0.98] disabled:opacity-50;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+}
+
+.zen-btn-outline {
+  @apply bg-transparent text-text-primary border border-white/10 font-bold py-2.5 px-6 rounded-lg transition-all hover:bg-white/5 hover:border-white/20 active:scale-[0.98];
+}
+
+/* Data Monospace */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  @apply font-mono;
+}
+
+/* Animations */
+@keyframes zenFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-zen {
+  animation: zenFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Table Zen Styling */
+.zen-table {
+  @apply w-full border-separate border-spacing-0;
+}
+
+.zen-table th {
+  @apply px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 border-b border-white/5 text-left;
+}
+
+.zen-table td {
+  @apply px-6 py-4 text-sm border-b border-white/[0.03] align-middle transition-colors;
+}
+
+.zen-table tr:hover td {
+  @apply bg-white/[0.02];
+}
