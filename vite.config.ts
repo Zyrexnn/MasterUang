@@ -50,15 +50,15 @@ export default defineConfig(({ mode }) => {
               }
               const body = JSON.parse(Buffer.concat(buffers).toString());
 
-              const vessels = {};
+              const vessels: Record<string, any> = {};
               console.log('⚓ [HTTP Proxy] Opening Short-Lived Uplink...');
 
               // Execute short-lived Fetch
               const aisWs = new WebSocket(AIS_URL);
-              let timeout;
+              let timeout: NodeJS.Timeout;
 
               const finish = () => {
-                clearTimeout(timeout);
+                if (timeout) clearTimeout(timeout);
                 aisWs.close();
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ vessels, timestamp: Date.now() }));
