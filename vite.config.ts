@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { WebSocketServer, WebSocket } from 'ws'
 
-const AIS_KEY = process.env.AIS_KEY || "";
+// AIS configuration will be loaded from env
 const AIS_URL = "wss://stream.aisstream.io/v0/stream";
 
 // https://vitejs.dev/config/
@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
                 aisWs.on('message', (d) => { if (ws.readyState === 1) ws.send(d.toString()); });
                 ws.on('message', (d) => {
                   const sub = JSON.parse(d.toString());
-                  if (sub.APIKey === "SERVER_INJECTED") sub.APIKey = AIS_KEY;
+                  if (sub.APIKey === "SERVER_INJECTED") sub.APIKey = env.AIS_KEY || "";
                   if (aisWs.readyState === 1) aisWs.send(JSON.stringify(sub));
                   else aisWs.once('open', () => aisWs.send(JSON.stringify(sub)));
                 });
@@ -51,34 +51,17 @@ export default defineConfig(({ mode }) => {
               const body = JSON.parse(Buffer.concat(buffers).toString());
 
               const vessels: Record<string, any> = {};
+              const activeKey = env.AIS_KEY || "";
 
-              if (!AIS_KEY) {
-                console.log('⚠️ [HTTP Proxy] No AIS_KEY found. Generating simulated fleet...');
-                // Generate mock vessels based on bounding box
-                const bbox = body.BoundingBoxes?.[0] || [[-11, 95], [6, 141]];
-                const minLat = Math.min(bbox[0][0], bbox[1][0]);
-                const maxLat = Math.max(bbox[0][0], bbox[1][0]);
-                const minLng = Math.min(bbox[0][1], bbox[1][1]);
-                const maxLng = Math.max(bbox[0][1], bbox[1][1]);
-
-                for (let i = 0; i < 15; i++) {
-                  const mmsi = 990000000 + i;
-                  vessels[mmsi] = {
-                    mmsi,
-                    name: `SIM_VESSEL_${i + 1}`,
-                    position: {
-                      lat: minLat + Math.random() * (maxLat - minLat),
-                      lng: minLng + Math.random() * (maxLng - minLng)
-                    },
-                    sog: Math.random() * 15,
-                    cog: Math.random() * 360,
-                    heading: Math.random() * 360,
-                    lastUpdate: Date.now(),
-                    isSimulated: true
-                  };
-                }
+              if (!activeKey) {
+                console.warn('⚠️ [HTTP Proxy] No AIS_KEY found in .env');
                 res.setHeader('Content-Type', 'application/json');
-                return res.end(JSON.stringify({ vessels, timestamp: Date.now(), isSimulated: true }));
+                res.statusCode = 401;
+                return res.end(JSON.stringify({
+                  error: 'AIS_KEY required',
+                  message: 'Please add AIS_KEY to your .env file',
+                  isSimulated: false
+                }));
               }
 
               console.log('⚓ [HTTP Proxy] Opening Short-Lived Uplink...');
@@ -97,13 +80,13 @@ export default defineConfig(({ mode }) => {
 
               aisWs.on('open', () => {
                 const sub = {
-                  APIKey: AIS_KEY,
+                  APIKey: activeKey,
                   BoundingBoxes: body.BoundingBoxes || [[[-11, 95], [6, 141]]],
                   FilterMessageTypes: ["PositionReport", "ShipStaticData"]
                 };
                 aisWs.send(JSON.stringify(sub));
 
-                // Collect for 8 seconds (Increased from 4s for better yield)
+                // Collect for 8 seconds
                 timeout = setTimeout(finish, 8000);
               });
 

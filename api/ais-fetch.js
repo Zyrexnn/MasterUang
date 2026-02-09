@@ -12,33 +12,14 @@ export default async function handler(req, res) {
     const { BoundingBoxes } = req.body;
     const vessels = {};
 
-    // Fallback if no API Key is provided
+    // Check for API Key
     if (!AIS_KEY) {
-        console.log('⚠️ [AIS Serverless] No AIS_KEY. Generating simulated data...');
-        const bbox = BoundingBoxes?.[0] || [[-11, 95], [6, 141]];
-        const minLat = Math.min(bbox[0][0], bbox[1][0]);
-        const maxLat = Math.max(bbox[0][0], bbox[1][0]);
-        const minLng = Math.min(bbox[0][1], bbox[1][1]);
-        const maxLng = Math.max(bbox[0][1], bbox[1][1]);
-
-        for (let i = 0; i < 20; i++) {
-            const mmsi = 990000000 + i;
-            vessels[mmsi] = {
-                mmsi,
-                name: `DEMO_SHIP_${i + 1}`,
-                position: {
-                    lat: minLat + Math.random() * (maxLat - minLat),
-                    lng: minLng + Math.random() * (maxLng - minLng)
-                },
-                sog: Math.random() * 12,
-                cog: Math.random() * 360,
-                heading: Math.random() * 360,
-                lastUpdate: Date.now(),
-                isSimulated: true
-            };
-        }
-        res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=15');
-        return res.status(200).json({ vessels, timestamp: Date.now(), isSimulated: true });
+        console.warn('⚠️ [AIS Serverless] AIS_KEY is missing in environment variables.');
+        return res.status(401).json({
+            error: 'AIS_KEY required',
+            message: 'Please add AIS_KEY to your .env file to view real-time maritime traffic. Get your free key at aisstream.io',
+            isSimulated: false
+        });
     }
 
     console.log('📡 [Serverless AIS] Initiating 8s Uplink Burst...');
