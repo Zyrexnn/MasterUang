@@ -58,9 +58,8 @@ const handleGuestEntry = async () => {
   <div class="min-h-screen bg-[#07090E] flex items-center justify-center p-6 relative overflow-hidden font-outfit">
     <!-- Cyber Background Elements -->
     <div class="absolute inset-0 pointer-events-none">
-       <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-bloomberg-amber/5 blur-[120px] rounded-full"></div>
-       <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-bloomberg-amber/5 blur-[120px] rounded-full"></div>
-       <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
+       <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-bloomberg-amber/5 blur-[80px] rounded-full"></div>
+       <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-bloomberg-amber/5 blur-[80px] rounded-full"></div>
     </div>
 
     <div class="w-full max-w-md relative z-10">
@@ -158,24 +157,15 @@ const handleGuestEntry = async () => {
               </template>
             </button>
 
-            <div v-if="authMode === 'CODE'" class="pt-4 flex flex-col items-center gap-4">
+            <div v-if="authMode === 'CODE'" class="pt-4 text-center">
               <button 
                 type="button"
                 @click="handleGuestEntry" 
-                class="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] hover:text-white transition-colors"
+                class="text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-[0.2em] transition-colors py-2"
               >
-                 Lanjut Tanpa Kode Lisensi &rarr;
+                 Masuk Tanpa Kode Lisensi &rarr;
               </button>
             </div>
-
-            <button 
-              v-if="authMode === 'CODE'"
-              type="button"
-              @click="handleGuestEntry"
-              class="w-full py-4 text-[10px] font-black text-neutral-500 hover:text-white uppercase tracking-[0.3em] transition-colors"
-            >
-              Proceed as Guest Operator
-            </button>
           </form>
 
           <transition name="fade">
@@ -191,14 +181,10 @@ const handleGuestEntry = async () => {
           </transition>
         </div>
 
-        <div class="mt-12 pt-8 border-t border-white/5 text-center">
-           <p class="text-[8px] font-black text-neutral-800 uppercase tracking-[0.5em] mb-4">
-             System Isolation Active • TLS 1.3
-           </p>
-           <div class="flex items-center justify-center gap-4">
-              <div class="h-[1px] w-12 bg-white/[0.03]"></div>
+        <div class="mt-10 pt-6 border-t border-white/5 text-center">
+           <div class="flex items-center justify-center gap-3">
               <div class="w-1.5 h-1.5 rounded-full bg-zen-green animate-pulse"></div>
-              <div class="h-[1px] w-12 bg-white/[0.03]"></div>
+              <p class="text-[8px] font-black text-neutral-700 uppercase tracking-[0.3em]">Secure Connection</p>
            </div>
         </div>
       </div>

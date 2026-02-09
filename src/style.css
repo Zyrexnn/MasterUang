@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+/* Performance: Using system fonts with fallbacks instead of external Google Fonts */
+/* This saves ~150KB of font loading */
 
 @tailwind base;
 @tailwind components;
@@ -6,6 +7,8 @@
 
 :root {
   color-scheme: dark;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', Consolas, monospace;
 }
 
 body {
@@ -14,6 +17,7 @@ body {
     radial-gradient(circle at 0% 0%, rgba(251, 191, 36, 0.03) 0%, transparent 50%),
     radial-gradient(circle at 100% 100%, rgba(251, 191, 36, 0.02) 0%, transparent 50%);
   background-attachment: fixed;
+  font-family: var(--font-sans);
 }
 
 /* Zen Typography */
@@ -27,7 +31,8 @@ h6 {
 }
 
 .font-outfit {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
+  font-weight: 600;
 }
 
 /* Custom scrollbar for Bloomberg feel */

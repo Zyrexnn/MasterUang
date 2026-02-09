@@ -144,7 +144,7 @@ router.afterEach((to) => {
           </h1>
           <div class="flex items-center gap-2 mt-1">
              <div class="w-1.5 h-1.5 rounded-full bg-zen-green animate-pulse"></div>
-             <p class="text-[9px] text-neutral-500 font-black tracking-[0.2em] uppercase">Zen • Bloomberg</p>
+             <p class="text-[9px] text-neutral-500 font-black tracking-[0.2em] uppercase">MasterUang Terminal</p>
           </div>
         </div>
         <button @click="toggleMobileMenu" class="lg:hidden p-2 text-text-secondary">
@@ -271,7 +271,7 @@ router.afterEach((to) => {
           </div>
 
           <div class="hidden lg:flex items-center gap-2 text-[9px] font-black text-neutral-600 uppercase tracking-widest">
-             Panel Kontrol
+             MasterUang Terminal
           </div>
           <div class="flex items-center space-x-3 md:space-x-4 pl-3 md:pl-4 border-l border-white/10">
             <div class="flex flex-col items-end hidden sm:block">
