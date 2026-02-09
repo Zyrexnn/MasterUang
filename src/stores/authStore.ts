@@ -30,6 +30,11 @@ export const useAuthStore = defineStore('auth', () => {
         return user.value?.role === 'premium' || user.value?.role === 'admin'
     })
 
+    const isGuest = computed(() => {
+        if (!user.value) return false
+        return user.value.code === 'GUEST-SESSION' || (user.value.role === 'user' && !isPremium.value)
+    })
+
     // Persistent Session Logic
     async function checkAuth() {
         loading.value = true
@@ -215,6 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
         error,
         isAdmin,
         isPremium,
+        isGuest,
         isExpired,
         checkAuth,
         loginWithCode,

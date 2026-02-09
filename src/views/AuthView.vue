@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useNotifications } from '../composables/useNotifications'
 import { KeyRound, Lock, ArrowRight, ShieldAlert, Cpu, Users, ShieldCheck, CheckCircle2 } from 'lucide-vue-next'
+import Captcha from '../components/Captcha.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -13,8 +14,18 @@ const authMode = ref<'CODE' | 'ADMIN'>('CODE')
 const inputCode = ref('')
 const adminCreds = ref({ username: '', password: '' })
 const isValidating = ref(false)
+const isCaptchaVerified = ref(false)
+
+const onCaptchaVerify = (success: boolean) => {
+    isCaptchaVerified.value = success
+}
 
 const handleLogin = async () => {
+    if (!isCaptchaVerified.value) {
+        notifications.error('Verification Required', 'Harap geser slider verifikasi untuk melanjutkan.')
+        return
+    }
+
     isValidating.value = true
     let success = false
     
@@ -49,6 +60,10 @@ const handleLogin = async () => {
 }
 
 const handleGuestEntry = async () => {
+    if (!isCaptchaVerified.value) {
+        notifications.error('Verification Required', 'Harap geser slider verifikasi untuk melanjutkan.')
+        return
+    }
     await authStore.setGuestSession()
     router.push('/world-news')
 }
@@ -144,9 +159,13 @@ const handleGuestEntry = async () => {
               </div>
             </div>
 
+            <div class="pt-4">
+                <Captcha @verify="onCaptchaVerify" />
+            </div>
+
             <button 
               type="submit"
-              :disabled="isValidating || (authMode === 'CODE' ? !inputCode.trim() : (!adminCreds.username || !adminCreds.password))"
+              :disabled="isValidating || !isCaptchaVerified || (authMode === 'CODE' ? !inputCode.trim() : (!adminCreds.username || !adminCreds.password))"
               class="w-full py-5 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] disabled:opacity-20 disabled:grayscale"
               :class="authMode === 'CODE' ? 'bg-bloomberg-amber shadow-bloomberg-amber/15' : 'bg-rose-500 text-white shadow-rose-500/15'"
             >

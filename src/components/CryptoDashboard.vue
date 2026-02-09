@@ -84,16 +84,19 @@ onMounted(async () => {
     
     // 1. CRITICAL PATH: Fetch only top 6 assets first for instant UI paint
     // This allows the "Establishing Neural Uplink" screen to vanish almost immediately
-    const prioriySymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT'];
+    // 1. CRITICAL PATH: Fetch top 15 assets first for instant UI richness
+    const prioriySymbols = [
+        'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 
+        'ADAUSDT', 'TRXUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT',
+        'LINKUSDT', 'NEARUSDT', 'PEPEUSDT', 'SHIBUSDT', 'SUIUSDT'
+    ];
     await binanceStore.fetchMarketData(prioriySymbols);
     
     // 2. BACKGROUND: Fetch the rest of the market ecosystem silently
-    // We delay this slightly to let the UI settle
     setTimeout(() => {
-        // Explicitly pass the full list to ensure it's not forgotten
-        console.log('Fetching full market list...', binanceStore.activeSymbols.length, 'assets');
+        console.log('[Terminal] Syncing 50+ market nodes...');
         binanceStore.fetchMarketData(binanceStore.activeSymbols); 
-    }, 800);
+    }, 1500);
     
     // DELAYED LOAD for news to prioritize core UI thread
     setTimeout(async () => {
@@ -224,16 +227,21 @@ const formatVolume = (val: string) => {
       
       <!-- Top Stats Bar -->
       <header class="h-16 md:h-24 bg-[#0B0E11] border-b border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 relative z-20">
-        <div class="flex items-center gap-4 md:gap-10 min-w-0">
-          <button @click="showSidebar = !showSidebar" class="p-3 bg-white/[0.03] border border-white/5 rounded-2xl text-neutral-400 hover:text-bloomberg-amber hover:bg-white/[0.08] transition-all flex-shrink-0">
+        <div class="flex items-center gap-3 md:gap-10 min-w-0">
+          <!-- Market List Toggle -->
+          <button 
+            @click="showSidebar = !showSidebar" 
+            class="flex items-center gap-2 p-2.5 md:p-3 bg-bloomberg-amber/5 border border-bloomberg-amber/20 rounded-2xl text-bloomberg-amber hover:bg-bloomberg-amber/10 transition-all flex-shrink-0 group"
+          >
             <Menu v-if="!showSidebar" class="w-5 h-5 md:w-6 md:h-6" />
             <X v-else class="w-5 h-5 md:w-6 md:h-6" />
+            <span class="text-[9px] md:text-[11px] font-black uppercase tracking-widest pr-1 hidden xs:block">Markets</span>
           </button>
  
-           <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-8 min-w-0">
+           <div class="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-8 min-w-0">
              <div class="flex items-center gap-2">
                 <h1 @click="showSidebar = true" class="text-lg md:text-3xl font-black font-outfit text-white uppercase tracking-tighter cursor-pointer hover:text-bloomberg-amber transition-colors">{{ selectedSymbol.replace('USDT', '') }}</h1>
-                <span class="text-[8px] md:text-[10px] font-black text-neutral-600 uppercase tracking-widest border border-white/10 px-1.5 py-0.5 rounded leading-none">USDT</span>
+                <span class="text-[8px] md:text-[10px] font-black text-neutral-700 uppercase tracking-widest border border-white/5 px-1.5 py-0.5 rounded leading-none">USDT</span>
              </div>
  
              <div v-if="selectedTicker" class="flex items-center gap-6 md:gap-10">

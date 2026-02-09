@@ -46,13 +46,13 @@ const router = createRouter({
             path: '/markets',
             name: 'markets',
             component: () => import('../views/MarketView.vue'),
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, requiresPremium: true }
         },
         {
             path: '/ship-tracker',
             name: 'ship-tracker',
             component: () => import('../views/ShipTrackerView.vue'),
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, requiresPremium: true }
         },
         {
             path: '/profile',

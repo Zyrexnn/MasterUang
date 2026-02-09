@@ -12,10 +12,11 @@ import {
   AlertCircle,
   RefreshCw
 } from 'lucide-vue-next'
-import { getAggregatedNews, type NewsItem } from '../services/api'
+import { getQuickNews, loadRemainingNews, getAggregatedNews, type NewsItem } from '../services/api'
 
 const news = ref<NewsItem[]>([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const searchQuery = ref('')
 const selectedCategory = ref('ALL')
 
@@ -27,22 +28,36 @@ const categories = [
   { id: 'GEOPOLITICS', name: 'GLOBAL AFFAIRS' }
 ]
 
-
+// Progressive Loading Strategy
 const fetchNews = async () => {
   loading.value = true
   try {
-    news.value = await getAggregatedNews()
+    // Step 1: Quick initial load (CryptoMax only)
+    news.value = await getQuickNews()
+    loading.value = false
+
+    // Step 2: Background load remaining sources
+    loadingMore.value = true
+    news.value = await loadRemainingNews()
   } catch (error) {
     console.error('Failed to fetch news:', error)
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
 
-
-
- 
-
+// Manual refresh uses full aggregated fetch
+const refreshNews = async () => {
+  loading.value = true
+  try {
+    news.value = await getAggregatedNews()
+  } catch (error) {
+    console.error('Refresh failed:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(fetchNews)
 
@@ -86,7 +101,7 @@ const getCategoryColor = (cat: string) => {
            <span class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Feed Active</span>
         </div>
         <button 
-          @click="fetchNews" 
+          @click="refreshNews" 
           class="flex-1 md:flex-none py-3 px-6 rounded-xl bg-white/[0.03] border border-white/10 text-white font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all flex items-center justify-center gap-2"
           :disabled="loading"
         >

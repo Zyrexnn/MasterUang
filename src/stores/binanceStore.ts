@@ -23,7 +23,9 @@ export const useBinanceStore = defineStore('binance', () => {
         'VETUSDT', 'AAVEUSDT', 'ALGOUSDT', 'QNTUSDT', 'EGLDUSDT', 'AXSUSDT', 'SANDUSDT', 'EOSUSDT', 'THETAUSDT', 'MANAUSDT',
         'FTMUSDT', 'IMXUSDT', 'RUNEUSDT', 'SNXUSDT', 'GRTUSDT', 'FLOWUSDT', 'CHZUSDT', 'NEOUSDT', 'XTZUSDT', 'CRVUSDT',
         'KAVAUSDT', 'ZECUSDT', 'MKRUSDT', 'IOTAUSDT', 'BSVUSDT', 'KLAYUSDT', 'DASHUSDT', 'STXUSDT', 'ZILUSDT', 'ENJUSDT',
-        'BCHUSDT', 'COMPUSDT'
+        'BCHUSDT', 'COMPUSDT', 'SUIUSDT', 'NEARUSDT', 'APTUSDT', 'ONDOUSDT', 'TIAUSDT', 'PEPEUSDT', 'WIFUSDT', 'ARBUSDT',
+        'OPUSDT', 'RENDERUSDT', 'FETUSDT', 'ENAUSDT', 'JUPUSDT', 'SEIUSDT', 'FLOKIUSDT', 'JASMYUSDT', 'BONKUSDT', 'NOTUSDT',
+        'WLDUSDT', 'GALAUSDT', 'DYDXUSDT', 'PYTHUSDT', 'BEAMUSDT', 'LDOUSDT'
     ]);
 
     const initWebSocket = (symbols: string[]) => {
@@ -55,8 +57,8 @@ export const useBinanceStore = defineStore('binance', () => {
         };
     };
 
-    const fetchMarketData = async (symbols: string[] = activeSymbols.value) => {
-        if (loading.value && symbols.length > 10) return; // Prevent double trigger
+    const fetchMarketData = async (symbols: string[] = activeSymbols.value, force: boolean = false) => {
+        if (loading.value && symbols.length > 10 && !force) return;
 
         loading.value = true;
         error.value = null;
@@ -103,11 +105,13 @@ export const useBinanceStore = defineStore('binance', () => {
             initWebSocket(symbols);
 
         } catch (err: any) {
-            error.value = 'Failed to load market data. Retrying with reduced set...';
+            error.value = 'Neural Link unstable. Activating secondary uplink...';
             console.error('Market Data Batch Fetch Error:', err);
-            // Safety Fallback: Load at least top 5 if everything fails
-            if (Object.keys(tickers.value).length === 0) {
-                await fetchMarketData(['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']);
+
+            // Emergency fallback: If we have too few tickers, try one more time with the top 50
+            if (Object.keys(tickers.value).length < 10 && !force) {
+                console.log('[Store] Triggering secondary uplink for top 50...');
+                await fetchMarketData(activeSymbols.value.slice(0, 50), true);
             }
         } finally {
             loading.value = false;
@@ -178,12 +182,12 @@ export const useBinanceStore = defineStore('binance', () => {
         return formatted;
     };
 
-    onUnmounted(() => { 
+    onUnmounted(() => {
         if (ws.value) ws.value.close();
     });
 
 
-    
+
 
     return {
         tickers,

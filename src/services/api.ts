@@ -16,11 +16,11 @@ export interface NewsItem {
 
 const symbols = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOGEUSDT', 'DOTUSDT', 'TRXUSDT',
-    'MATICUSDT', 'SHIBUSDT', 'LTCUSDT', 'UNIUSDT', 'LINKUSDT', 'ATOMUSDT', 'XLMUSDT', 'ETCUSDT', 'FILUSDT', 'HBARUSDT',
-    'VETUSDT', 'AAVEUSDT', 'ALGOUSDT', 'QNTUSDT', 'EGLDUSDT', 'AXSUSDT', 'SANDUSDT', 'EOSUSDT', 'THETAUSDT', 'MANAUSDT',
-    'FTMUSDT', 'IMXUSDT', 'RUNEUSDT', 'SNXUSDT', 'GRTUSDT', 'FLOWUSDT', 'CHZUSDT', 'NEOUSDT', 'XTZUSDT', 'CRVUSDT',
-    'KAVAUSDT', 'ZECUSDT', 'MKRUSDT', 'IOTAUSDT', 'BSVUSDT', 'KLAYUSDT', 'DASHUSDT', 'STXUSDT', 'ZILUSDT', 'ENJUSDT',
-    'BCHUSDT', 'COMPUSDT', 'USDTIDR'
+    'LINKUSDT', 'NEARUSDT', 'PEPEUSDT', 'SHIBUSDT', 'SUIUSDT', 'APTUSDT', 'STXUSDT', 'LINKUSDT', 'LTCUSDT', 'BCHUSDT',
+    'TONUSDT', 'HBARUSDT', 'UNIUSDT', 'XLMUSDT', 'FILUSDT', 'TIAUSDT', 'OPUSDT', 'ARBUSDT', 'IMXUSDT', 'RENDERUSDT',
+    'FETUSDT', 'RUNEUSDT', 'GRTUSDT', 'AAVEUSDT', 'MKRUSDT', 'ENAUSDT', 'JUPUSDT', 'SEIUSDT', 'FLOKIUSDT', 'JASMYUSDT',
+    'BONKUSDT', 'NOTUSDT', 'PYTHUSDT', 'WLDUSDT', 'GALAUSDT', 'DYDXUSDT', 'CRVUSDT', 'FTMUSDT', 'ONDOUSDT', 'ORDIUSDT',
+    'USDTIDR'
 ]
 
 let lastIdrPrice = 15650; // Fallback
@@ -29,12 +29,48 @@ export function getLatestIdrPrice() {
     return lastIdrPrice;
 }
 
-const getMockPrices = (): CryptoPrice[] => [
-    { symbol: 'BTC', name: 'Bitcoin', price: 98450.20, change24h: 2.5, marketCap: 1.9e12, volume24h: 3.5e10, priceHistory: [95000, 97000, 98450] },
-    { symbol: 'ETH', name: 'Ethereum', price: 2750.50, change24h: -1.2, marketCap: 3.2e11, volume24h: 1.2e10, priceHistory: [2800, 2760, 2750] },
-    { symbol: 'SOL', name: 'Solana', price: 105.80, change24h: 5.4, marketCap: 4.5e10, volume24h: 2.5e9, priceHistory: [95, 100, 105] },
-    { symbol: 'BNB', name: 'BNB', price: 780.20, change24h: 0.8, marketCap: 9.2e10, volume24h: 1.1e9, priceHistory: [770, 785, 780] }
-]
+export async function fetchIdrPrice(): Promise<number> {
+    try {
+        const url = 'https://api.binance.com/api/v3/ticker/price?symbol=USDTIDR'
+        const res = await fetch(url)
+        const data = await res.json()
+        if (data.price) {
+            lastIdrPrice = parseFloat(data.price)
+            return lastIdrPrice
+        }
+    } catch (e) {
+        console.error('IDR Fetch Error:', e)
+    }
+    return lastIdrPrice
+}
+
+const getMockPrices = (): CryptoPrice[] => {
+    const list: CryptoPrice[] = [
+        { symbol: 'BTC', name: 'Bitcoin', price: 98450.20, change24h: 2.5, marketCap: 1.9e12, volume24h: 3.5e10, priceHistory: [95000, 97000, 98450] },
+        { symbol: 'ETH', name: 'Ethereum', price: 2750.50, change24h: -1.2, marketCap: 3.2e11, volume24h: 1.2e10, priceHistory: [2800, 2760, 2750] },
+        { symbol: 'SOL', name: 'Solana', price: 105.80, change24h: 5.4, marketCap: 4.5e10, volume24h: 2.5e9, priceHistory: [95, 100, 105] },
+        { symbol: 'BNB', name: 'BNB', price: 780.20, change24h: 0.8, marketCap: 9.2e10, volume24h: 1.1e9, priceHistory: [770, 785, 780] },
+        { symbol: 'XRP', name: 'XRP', price: 1.43, change24h: 1.2, marketCap: 8.8e10, volume24h: 2.1e9, priceHistory: [1.4, 1.43] },
+        { symbol: 'ADA', name: 'Cardano', price: 0.35, change24h: -0.5, marketCap: 1.2e10, volume24h: 4.5e8, priceHistory: [0.36, 0.35] },
+        { symbol: 'TRX', name: 'TRON', price: 0.28, change24h: 0.3, marketCap: 2.4e10, volume24h: 3.2e8, priceHistory: [0.27, 0.28] },
+        { symbol: 'AVAX', name: 'Avalanche', price: 34.50, change24h: 2.1, marketCap: 1.4e10, volume24h: 5.4e8, priceHistory: [33, 34.50] },
+        { symbol: 'DOT', name: 'Polkadot', price: 6.20, change24h: -1.1, marketCap: 8.5e9, volume24h: 1.8e8, priceHistory: [6.3, 6.20] },
+        { symbol: 'DOGE', name: 'Dogecoin', price: 0.12, change24h: 4.5, marketCap: 1.8e10, volume24h: 1.2e9, priceHistory: [0.11, 0.12] }
+    ];
+
+    // Fill up to 50 for robust UI
+    const extraItems: CryptoPrice[] = Array(40).fill(null).map((_, i) => ({
+        symbol: `ALT${i}`,
+        name: `Altcoin ${i}`,
+        price: 1.25,
+        change24h: 0.5,
+        marketCap: 1e9,
+        volume24h: 1e8,
+        priceHistory: [1.2, 1.25]
+    }));
+
+    return [...list, ...extraItems];
+}
 
 export async function getCryptoPrices(): Promise<CryptoPrice[]> {
     try {
@@ -279,6 +315,77 @@ export async function getAggregatedNews(): Promise<NewsItem[]> {
     }
 
     return cachedNews?.data || [];
+}
+
+/**
+ * Quick News: Fetches only the fastest source (CryptoMax) for initial page load.
+ * Use this for quick first paint, then call getAggregatedNews for full feed.
+ */
+export async function getQuickNews(): Promise<NewsItem[]> {
+    const now = Date.now();
+
+    // Still use cache if available
+    if (cachedNews && (now - cachedNews.time < NEWS_CACHE_DURATION)) {
+        console.log('📰 Serving Quick News from cache');
+        return cachedNews.data;
+    }
+
+    console.log('⚡ Fetching Quick News (CryptoMax only)...');
+    try {
+        const quickNews = await getCryptoMaxNews();
+        if (quickNews.length > 0) {
+            // Store as initial cache, will be replaced by full fetch later
+            cachedNews = { data: quickNews, time: now };
+        }
+        return quickNews;
+    } catch (e) {
+        console.error('Quick News Fetch Error:', e);
+        return [];
+    }
+}
+
+/**
+ * Background News Loader: Fetches remaining sources and merges with cache.
+ * Call this after getQuickNews for progressive loading.
+ */
+export async function loadRemainingNews(): Promise<NewsItem[]> {
+    console.log('📡 Loading remaining news sources in background...');
+
+    const results = await Promise.allSettled([
+        getCryptoNews(),
+        getGeneralNews()
+    ]);
+
+    const additionalNews: NewsItem[] = [];
+    results.forEach(res => {
+        if (res.status === 'fulfilled') {
+            additionalNews.push(...res.value);
+        }
+    });
+
+    // Merge with existing cache
+    const existingNews = cachedNews?.data || [];
+    const allNews = [...existingNews, ...additionalNews];
+
+    // Deduplicate by title
+    const seen = new Set<string>();
+    const uniqueNews = allNews.filter(item => {
+        const key = item.title.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    // Sort: CryptoMax first
+    const sortedNews = uniqueNews.sort((a, b) => {
+        if (a.category === 'CRYPTOMAX' && b.category !== 'CRYPTOMAX') return -1;
+        if (b.category === 'CRYPTOMAX' && a.category !== 'CRYPTOMAX') return 1;
+        return 0;
+    });
+
+    cachedNews = { data: sortedNews, time: Date.now() };
+    console.log(`✅ Total news items: ${sortedNews.length}`);
+    return sortedNews;
 }
 
 export const formatCurrency = (val: number) => `$${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`

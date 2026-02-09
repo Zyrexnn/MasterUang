@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   TrendingUp
 } from 'lucide-vue-next'
-import { getLatestIdrPrice, getCryptoPrices } from '../services/api'
+import { getLatestIdrPrice, fetchIdrPrice } from '../services/api'
 import { supabase } from '../composables/useSupabase'
 
 const authStore = useAuthStore()
@@ -31,11 +31,11 @@ const notifications_ui = useNotifications()
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/', premium: true },
   { name: 'Transactions', icon: ArrowRightLeft, path: '/transactions', premium: true },
-  { name: 'Markets', icon: TrendingUp, path: '/markets' },
+  { name: 'Markets', icon: TrendingUp, path: '/markets', premium: true },
   { name: 'Crypto', icon: Bitcoin, path: '/crypto' },
   { name: 'AI Advisor', icon: MessageSquare, path: '/ai-advisor', premium: true },
   { name: 'World News', icon: Newspaper, path: '/world-news' },
-  { name: 'Ship Tracker', icon: Anchor, path: '/ship-tracker' },
+  { name: 'Ship Tracker', icon: Anchor, path: '/ship-tracker', premium: true },
   { name: 'Profile', icon: Settings, path: '/profile' },
   { name: 'Admin', icon: ShieldCheck, path: '/admin', adminOnly: true },
 ]
@@ -47,7 +47,7 @@ const toggleMobileMenu = () => {
 const navigate = (path: string) => {
   const item = navItems.find(n => n.path === path)
   if (item?.premium && !authStore.isPremium) {
-     notifications_ui.warning('Premium Locked', 'Fitur ini eksklusif untuk member Premium. Silakan aktifkan kode lisensi.')
+     notifications_ui.warning('Protocol Restricted', 'Neural uplink requires premium authorization code.')
      router.push('/profile')
      isMobileMenuOpen.value = false
      return
@@ -91,23 +91,22 @@ const dismissNotification = (id: string) => {
 }
 
 const updatePrices = async () => {
-    // 1. Get Crypto Prices as usual
-    await getCryptoPrices()
+    // 1. Fetch high-precision IDR price from Binance (Real-time dedicated call)
+    const binancePrice = await fetchIdrPrice()
+    if (binancePrice && binancePrice > 10000) {
+        usdToIdr.value = binancePrice
+        return 
+    }
     
-    // 2. Fetch Real-time IDR Rate (Free API)
+    // 2. Fallback to general Forex rate if Binance fails
     try {
         const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=IDR');
         if (res.ok) {
             const data = await res.json();
-            // Add ~0.3% spread/premium for USDT
             usdToIdr.value = Math.floor(data.rates.IDR * 1.003);
-        } else {
-             // Fallback
-             usdToIdr.value = getLatestIdrPrice();
         }
     } catch (e) {
-        // Fallback
-        usdToIdr.value = getLatestIdrPrice();
+        console.error('Forex Fallback Failed');
     }
 }
 
@@ -115,7 +114,7 @@ onMounted(() => {
     updatePrices()
     fetchNotifications()
     
-    const priceTimer = setInterval(updatePrices, 30000)
+    const priceTimer = setInterval(updatePrices, 10000)
     const notifTimer = setInterval(fetchNotifications, 60000)
     
     return () => {
@@ -131,7 +130,7 @@ router.afterEach((to) => {
 </script>
 
 <template>
-  <div class="flex h-screen bg-[#0B0E11] overflow-hidden relative">
+  <div class="flex h-screen bg-[#0B0E11] overflow-hidden relative font-outfit">
     <!-- Sidebar for Desktop -->
     <aside 
       class="fixed inset-y-0 left-0 z-50 w-64 bg-[#11141D] border-r border-white/5 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 shadow-[20px_0_40px_rgba(0,0,0,0.3)]"
@@ -139,12 +138,12 @@ router.afterEach((to) => {
     >
       <div class="p-8 pb-10 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-black text-bloomberg-amber tracking-tighter font-outfit uppercase">
+          <h1 class="text-2xl font-black text-bloomberg-amber tracking-tighter uppercase italic">
             Master<span class="text-white opacity-80">Uang</span>
           </h1>
           <div class="flex items-center gap-2 mt-1">
              <div class="w-1.5 h-1.5 rounded-full bg-zen-green animate-pulse"></div>
-             <p class="text-[9px] text-neutral-500 font-black tracking-[0.2em] uppercase">MasterUang Terminal</p>
+             <p class="text-[9px] text-neutral-500 font-black tracking-[0.2em] uppercase">Security Level 7</p>
           </div>
         </div>
         <button @click="toggleMobileMenu" class="lg:hidden p-2 text-text-secondary">
@@ -157,15 +156,18 @@ router.afterEach((to) => {
         <button 
             v-if="!item.adminOnly || authStore.isAdmin"
             @click="navigate(item.path)"
-          class="w-full flex items-center px-5 py-4 text-xs font-black transition-all group rounded-xl uppercase tracking-widest relative overflow-hidden active:scale-95"
+          class="w-full flex items-center px-5 py-4 text-[10px] font-black transition-all group rounded-xl uppercase tracking-[0.2em] relative overflow-hidden active:scale-95 border"
           :class="[
             currentPath === item.path 
-              ? 'bg-bloomberg-amber/10 text-bloomberg-amber border border-white/5 shadow-[0_0_20px_rgba(251,191,36,0.15)]' 
-              : 'text-neutral-500 hover:bg-white/[0.03] hover:text-white',
-            item.premium && !authStore.isPremium ? 'opacity-40 grayscale grayscale-[50%] bg-black/10' : ''
+              ? 'bg-bloomberg-amber/10 text-bloomberg-amber border-bloomberg-amber/20 shadow-[0_0_20px_rgba(251,191,36,0.15)]' 
+              : (item.premium && !authStore.isPremium 
+                  ? 'bg-white/[0.01] border-white/5 text-neutral-600 cursor-not-allowed opacity-50' 
+                  : 'bg-transparent border-transparent text-neutral-500 hover:bg-white/[0.03] hover:text-white hover:border-white/5')
           ]"
         >
-          <div v-if="item.premium && !authStore.isPremium" class="absolute inset-0 bg-black/5 pointer-events-none"></div>
+          <!-- Locked Overlay for Guest -->
+          <div v-if="item.premium && !authStore.isPremium" class="absolute inset-0 bg-black/40 backdrop-grayscale-[0.8] backdrop-blur-sm pointer-events-none"></div>
+          
           <component 
             :is="item.icon" 
             class="w-4 h-4 mr-4 transition-transform group-hover:scale-110 shrink-0" 
@@ -174,8 +176,13 @@ router.afterEach((to) => {
               item.premium && !authStore.isPremium ? 'text-neutral-700' : ''
             ]" 
           />
-          <span class="font-outfit flex-1 text-left">{{ item.name }}</span>
-          <Lock v-if="item.premium && !authStore.isPremium" class="w-3 h-3 ml-2 text-neutral-700 group-hover:text-bloomberg-amber/50 transition-colors" />
+          <span class="flex-1 text-left">{{ item.name }}</span>
+          
+          <!-- Lock status badge -->
+          <div v-if="item.premium && !authStore.isPremium" class="flex items-center gap-2">
+            <span class="text-[7px] font-black text-neutral-600 border border-neutral-800 px-1 py-0.5 rounded-md tracking-widest bg-black/20">PREMIUM</span>
+            <Lock class="w-3 h-3 text-neutral-700" />
+          </div>
         </button>
         </template>
       </nav>
@@ -216,10 +223,10 @@ router.afterEach((to) => {
               <span class="text-[8px] md:text-[9px] font-black text-neutral-600 uppercase tracking-widest hidden xs:block">Status Sistem</span>
               <div class="h-1 w-1 rounded-full bg-zen-green hidden xs:block"></div>
             </div>
-            <div class="flex items-center gap-1 text-[9px] md:text-[10px] font-mono text-neutral-400">
-              <span class="uppercase font-black text-neutral-600 mr-1 hidden md:inline">USDT/IDR</span>
-              <span class="text-white font-bold tabular-nums text-[10px]">Rp {{ usdToIdr.toLocaleString('id-ID') }}</span>
-              <span class="text-zen-green text-[8px] ml-1">LIVE</span>
+            <div class="flex items-center gap-1.5 text-[9px] md:text-[10px] font-mono whitespace-nowrap">
+              <span class="uppercase font-black text-neutral-700 tracking-tighter">USDT/IDR</span>
+              <span class="text-white font-black tabular-nums">Rp {{ usdToIdr.toLocaleString('id-ID') }}</span>
+              <div class="w-1 h-1 rounded-full bg-zen-green animate-pulse ml-1"></div>
             </div>
           </div>
         </div>

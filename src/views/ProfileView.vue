@@ -99,12 +99,29 @@ const authStore = useAuthStore()
       </div>
 
       <!-- Redemption Section -->
-      <div v-if="!authStore.isPremium" class="space-y-4">
-        <h3 class="text-sm font-black text-neutral-600 uppercase tracking-[0.3em] flex items-center gap-3">
-          <div class="w-1.5 h-1.5 rounded-full bg-bloomberg-amber"></div>
-          Verification Protocol
-        </h3>
-        <RedeemCodeForm />
+      <div v-if="!authStore.isPremium" class="space-y-10">
+        <div class="space-y-4">
+          <h3 class="text-sm font-black text-neutral-600 uppercase tracking-[0.3em] flex items-center gap-3">
+            <div class="w-1.5 h-1.5 rounded-full bg-bloomberg-amber"></div>
+            Verification Protocol
+          </h3>
+          <RedeemCodeForm />
+        </div>
+
+        <!-- Locked Modules Summary for Guests -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-black text-rose-500/50 uppercase tracking-[0.3em] flex items-center gap-3">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose-500/50"></div>
+            Restricted Signal Modules
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+             <div v-for="mod in ['Market Matrix', 'Ship Tracker', 'Asset Ledger', 'Neural Advisor', 'Wealth Metrics']" :key="mod" class="terminal-card border-white/5 p-5 flex items-center gap-3 opacity-40 grayscale group">
+                <Lock class="w-3.5 h-3.5 text-neutral-600 group-hover:text-rose-500/50 transition-colors" />
+                <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{{ mod }}</span>
+             </div>
+          </div>
+          <p class="text-[9px] font-bold text-neutral-700 uppercase tracking-widest mt-4">Masukkan kode otorisasi untuk membuka akses penuh ke semua modul transmisi data tinggi.</p>
+        </div>
       </div>
 
       <!-- Features Summary if Premium -->

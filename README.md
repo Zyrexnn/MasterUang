@@ -1,9 +1,6 @@
 # 🪙 MasterUang - Premium Finance & Market Dashboard
 
-[![Vue.js](https://img.shields.io/badge/Vue.js-3.4-4fc08d?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![License-MIT](https://img.shields.io/badge/License-MIT-amber?style=for-the-badge)](LICENSE)
+[![Proprietary](https://img.shields.io/badge/License-Proprietary-rose?style=for-the-badge)](LICENSE)
 
 **MasterUang** is a sophisticated, Bloomberg-inspired financial tracking platform designed for users who demand professional-grade market insights and seamless expense management. Combining real-time financial data with AI-driven analysis, MasterUang provides a "Zen" interface for complex data visualization.
 
@@ -107,19 +104,19 @@ MasterUang uses a custom **Bloomberg-Zen** theme:
 
 ---
 
-## 🤝 Contribution
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ---
 
-## 📝 License
-Distributed under the MIT License. See `LICENSE` for more information.
+## 🔒 License & Usage
+This project is **PROPRIETARY**. All rights are reserved by [Ikhsan](https://github.com/Zyrexnn).
+
+**Personal Use Only**: You are permitted to view and run this project for personal evaluation or learning purposes. 
+
+**Strictly Prohibited without Written Permission:**
+- Redistribution of source code or binaries.
+- Commercial use or monetization of the software.
+- Creating derivative works for public distribution.
+
+For inquiries regarding licensing or commercial use, please contact the author via GitHub or the contact information provided in the Profile section.
 
 ---
 Built with ❤️ by [Ikhsan](https://github.com/Zyrexnn)
