@@ -51,6 +51,36 @@ export default defineConfig(({ mode }) => {
               const body = JSON.parse(Buffer.concat(buffers).toString());
 
               const vessels: Record<string, any> = {};
+
+              if (!AIS_KEY) {
+                console.log('⚠️ [HTTP Proxy] No AIS_KEY found. Generating simulated fleet...');
+                // Generate mock vessels based on bounding box
+                const bbox = body.BoundingBoxes?.[0] || [[-11, 95], [6, 141]];
+                const minLat = Math.min(bbox[0][0], bbox[1][0]);
+                const maxLat = Math.max(bbox[0][0], bbox[1][0]);
+                const minLng = Math.min(bbox[0][1], bbox[1][1]);
+                const maxLng = Math.max(bbox[0][1], bbox[1][1]);
+
+                for (let i = 0; i < 15; i++) {
+                  const mmsi = 990000000 + i;
+                  vessels[mmsi] = {
+                    mmsi,
+                    name: `SIM_VESSEL_${i + 1}`,
+                    position: {
+                      lat: minLat + Math.random() * (maxLat - minLat),
+                      lng: minLng + Math.random() * (maxLng - minLng)
+                    },
+                    sog: Math.random() * 15,
+                    cog: Math.random() * 360,
+                    heading: Math.random() * 360,
+                    lastUpdate: Date.now(),
+                    isSimulated: true
+                  };
+                }
+                res.setHeader('Content-Type', 'application/json');
+                return res.end(JSON.stringify({ vessels, timestamp: Date.now(), isSimulated: true }));
+              }
+
               console.log('⚓ [HTTP Proxy] Opening Short-Lived Uplink...');
 
               // Execute short-lived Fetch
@@ -73,8 +103,8 @@ export default defineConfig(({ mode }) => {
                 };
                 aisWs.send(JSON.stringify(sub));
 
-                // Collect for 4 seconds then close
-                timeout = setTimeout(finish, 4000);
+                // Collect for 8 seconds (Increased from 4s for better yield)
+                timeout = setTimeout(finish, 8000);
               });
 
               aisWs.on('message', (rawData) => {
@@ -82,6 +112,14 @@ export default defineConfig(({ mode }) => {
                   const data = JSON.parse(rawData.toString());
                   const mmsi = data.MetaData?.MMSI || data.Metadata?.MMSI;
                   if (mmsi) {
+                    const msg = data.Message?.PositionReport || data.Message?.ShipStaticData || data.Message;
+
+                    // Basic validation: skip packets with invalid coordinates
+                    if (data.MessageType === 'PositionReport') {
+                      if (msg.Latitude === 0 && msg.Longitude === 0) return;
+                      if (msg.Latitude > 90 || msg.Latitude < -90) return;
+                    }
+
                     if (!vessels[mmsi]) {
                       vessels[mmsi] = {
                         mmsi,
@@ -92,7 +130,6 @@ export default defineConfig(({ mode }) => {
                       };
                     }
                     const v = vessels[mmsi];
-                    const msg = data.Message?.PositionReport || data.Message?.ShipStaticData || data.Message;
                     if (data.MessageType === 'PositionReport') {
                       v.position = { lat: msg.Latitude, lng: msg.Longitude };
                       v.sog = msg.Sog; v.cog = msg.Cog; v.heading = msg.TrueHeading;

@@ -11,9 +11,37 @@ export default async function handler(req, res) {
 
     const { BoundingBoxes } = req.body;
     const vessels = {};
-    let isDone = false;
 
-    console.log('📡 [Serverless AIS] Initiating 5s Uplink Burst...');
+    // Fallback if no API Key is provided
+    if (!AIS_KEY) {
+        console.log('⚠️ [AIS Serverless] No AIS_KEY. Generating simulated data...');
+        const bbox = BoundingBoxes?.[0] || [[-11, 95], [6, 141]];
+        const minLat = Math.min(bbox[0][0], bbox[1][0]);
+        const maxLat = Math.max(bbox[0][0], bbox[1][0]);
+        const minLng = Math.min(bbox[0][1], bbox[1][1]);
+        const maxLng = Math.max(bbox[0][1], bbox[1][1]);
+
+        for (let i = 0; i < 20; i++) {
+            const mmsi = 990000000 + i;
+            vessels[mmsi] = {
+                mmsi,
+                name: `DEMO_SHIP_${i + 1}`,
+                position: {
+                    lat: minLat + Math.random() * (maxLat - minLat),
+                    lng: minLng + Math.random() * (maxLng - minLng)
+                },
+                sog: Math.random() * 12,
+                cog: Math.random() * 360,
+                heading: Math.random() * 360,
+                lastUpdate: Date.now(),
+                isSimulated: true
+            };
+        }
+        res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=15');
+        return res.status(200).json({ vessels, timestamp: Date.now(), isSimulated: true });
+    }
+
+    console.log('📡 [Serverless AIS] Initiating 8s Uplink Burst...');
 
     const promise = new Promise((resolve) => {
         const ws = new WebSocket(AIS_URL);
@@ -21,7 +49,7 @@ export default async function handler(req, res) {
         const timeout = setTimeout(() => {
             ws.close();
             resolve(vessels);
-        }, 5000); // Collect for 5 seconds
+        }, 8000); // Collect for 8 seconds
 
         ws.on('open', () => {
             const subscription = {
@@ -38,6 +66,14 @@ export default async function handler(req, res) {
                 const mmsi = data.MetaData?.MMSI || data.Metadata?.MMSI;
 
                 if (mmsi) {
+                    const msg = data.Message?.PositionReport || data.Message?.ShipStaticData || data.Message;
+
+                    // Data Validation
+                    if (data.MessageType === 'PositionReport') {
+                        if (msg.Latitude === 0 && msg.Longitude === 0) return;
+                        if (msg.Latitude > 90 || msg.Latitude < -90) return;
+                    }
+
                     if (!vessels[mmsi]) {
                         vessels[mmsi] = {
                             mmsi,
@@ -51,8 +87,6 @@ export default async function handler(req, res) {
                     }
 
                     const vessel = vessels[mmsi];
-                    const msg = data.Message?.PositionReport || data.Message?.ShipStaticData || data.Message;
-
                     if (data.MessageType === 'PositionReport') {
                         vessel.position = { lat: msg.Latitude, lng: msg.Longitude };
                         vessel.sog = msg.Sog;

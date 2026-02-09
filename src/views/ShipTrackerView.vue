@@ -186,9 +186,13 @@ const formatTimeAgo = (timestamp: number) => {
                 </div>
                 <div class="p-3 bg-white/5 rounded border border-white/5">
                   <p class="text-[9px] text-neutral-500 uppercase font-bold mb-1">Protocol Status</p>
-                  <p class="text-xs font-mono font-bold" :class="isPolling() ? 'text-bloomberg-amber' : 'text-zen-green'">
-                    {{ isPolling() ? 'SYNCING DATA...' : store.selectedRegion.description }}
+                  <p class="text-xs font-mono font-bold" :class="isPolling() ? 'text-bloomberg-amber' : (error() ? 'text-red-500' : 'text-zen-green')">
+                    {{ isPolling() ? 'UPLINK BURST...' : (error() ? 'SYNC ERROR' : 'GRID NOMINAL') }}
                   </p>
+                </div>
+                <div v-if="Object.values(store.vessels).some(v => (v as any).isSimulated)" class="p-2 bg-bloomberg-amber/10 border border-bloomberg-amber/30 rounded flex items-center gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-bloomberg-amber animate-pulse"></div>
+                  <span class="text-[9px] font-black text-bloomberg-amber uppercase tracking-[0.1em]">Simulation Mode Active</span>
                 </div>
               </div>
 
@@ -199,7 +203,9 @@ const formatTimeAgo = (timestamp: number) => {
                     <path d="M12 16v-4"/>
                     <path d="M12 8h.01"/>
                   </svg>
-                  Data synthesized via public AIS stream. Protocol is not certified for maritime navigation or tactical deployment.
+                  {{ Object.values(store.vessels).some(v => (v as any).isSimulated) 
+                    ? 'No AIS_KEY detected. Running encrypted simulation of global maritime traffic for demonstration.'
+                    : 'Data synthesized via public AIS stream. Protocol is not certified for maritime navigation.' }}
                 </div>
               </div>
            </div>

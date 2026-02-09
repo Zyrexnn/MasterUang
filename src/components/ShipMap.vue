@@ -94,7 +94,12 @@ const syncMarkers = () => {
   
   // Viewport Culling + Limit displayed vessels (top 500)
   const toDisplay = currentMmsis
-    .filter(mmsi => bounds.contains([vessels[mmsi].position.lat, vessels[mmsi].position.lng]))
+    .filter(mmsi => {
+      const v = vessels[mmsi];
+      // Filter out invalid positions (0,0 is usually a placeholder or error)
+      if (v.position.lat === 0 && v.position.lng === 0) return false;
+      return bounds.contains([v.position.lat, v.position.lng]);
+    })
     .slice(0, 500);
 
   const displaySet = new Set(toDisplay);
@@ -168,10 +173,18 @@ onUnmounted(() => {
     
     <!-- No vessels empty state overlay -->
     <div v-if="store.stats.activeCount === 0 && !store.isPolling" 
-         class="absolute inset-0 z-20 flex items-center justify-center bg-[#0F1117]/60 backdrop-blur-sm pointer-events-none">
-       <div class="text-center">
-          <p class="text-amber-500 font-mono text-xs uppercase tracking-widest mb-2">No active vessels in zone</p>
-          <p class="text-neutral-500 text-[10px] uppercase">Try manual refresh or adjusting filters</p>
+         class="absolute inset-0 z-20 flex items-center justify-center bg-[#0F1117]/40 backdrop-blur-[2px] pointer-events-none">
+       <div class="zen-glass p-8 border border-white/5 bg-[#11141D]/80 rounded-2xl text-center shadow-2xl">
+          <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FB4D02" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4M12 16h.01"/>
+             </svg>
+          </div>
+          <p class="text-amber-500 font-black font-outfit text-xs uppercase tracking-[0.2em] mb-2">No active units in sector</p>
+          <p class="text-neutral-500 text-[10px] uppercase font-bold tracking-widest max-w-[200px] mx-auto leading-relaxed">
+            Awaiting AIS telemetry burst. Try manual refresh or adjusting filters.
+          </p>
        </div>
     </div>
   </div>

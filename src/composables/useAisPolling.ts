@@ -27,12 +27,22 @@ export function useAisPolling() {
                 })
             });
 
-            if (!response.ok) throw new Error('Protocol Sync Failed');
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) throw new Error('AIS API Key Unauthorized');
+                throw new Error('Protocol Sync Failed');
+            }
 
             const data = await response.json();
-            // Assume server returns Record<number, Vessel>
-            store.setVessels(data.vessels);
-            console.log(`📡 [AIS] ${store.selectedRegion.name} Sync: ${Object.keys(data.vessels).length} units`);
+
+            // Handle potentially empty or simulated response
+            const vesselList = data.vessels || {};
+            store.setVessels(vesselList);
+
+            if (data.isSimulated) {
+                console.log(`💡 [AIS] Running in Simulation Mode (${Object.keys(vesselList).length} units)`);
+            } else {
+                console.log(`📡 [AIS] ${store.selectedRegion.name} Sync: ${Object.keys(vesselList).length} units`);
+            }
         } catch (err: any) {
             console.error('AIS Sync Error:', err);
             store.error = err.message || 'Network Congestion';

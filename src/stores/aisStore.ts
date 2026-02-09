@@ -10,6 +10,7 @@ export interface Vessel {
   cog: number;
   heading: number;
   lastUpdate: number;
+  isSimulated?: boolean;
 }
 
 export const useAisStore = defineStore('ais', () => {
