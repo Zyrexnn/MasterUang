@@ -384,7 +384,8 @@ onMounted(() => {
       <!-- CONTENT: CODES -->
       <section v-if="activeTab === 'codes'" class="flex-1">
         <div class="terminal-card p-0 bg-[#0F1117] border border-white/5 overflow-hidden">
-          <table class="w-full text-left">
+          <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[800px]">
             <thead class="bg-white/[0.02] border-b border-white/5">
               <tr class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em]">
                 <th class="px-8 py-5">Kode Akses</th>
@@ -449,6 +450,7 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+          </div>
           <div v-if="filteredCodes.length === 0" class="p-20 text-center flex flex-col items-center gap-4">
              <Search class="w-10 h-10 text-neutral-800" />
              <p class="text-[10px] font-black text-neutral-600 uppercase tracking-widest">No matching sequences found</p>
@@ -540,7 +542,8 @@ onMounted(() => {
       <!-- CONTENT: USERS -->
       <section v-if="activeTab === 'users'" class="flex-1">
         <div class="terminal-card p-0 bg-[#0F1117] border border-white/5 overflow-hidden">
-          <table class="w-full text-left">
+          <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[800px]">
             <thead class="bg-white/[0.02] border-b border-white/5">
               <tr class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em]">
                 <th class="px-8 py-5">Nama Pengguna</th>
@@ -598,6 +601,7 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 

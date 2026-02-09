@@ -31,7 +31,11 @@ export default {
             },
             boxShadow: {
                 'amber-glow': '0 0 15px -3px rgba(255, 183, 77, 0.3)',
-            }
+                '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.5)',
+            },
+            screens: {
+                'xs': '475px',
+            },
         },
     },
     plugins: [

@@ -395,12 +395,12 @@ const categorySeries = computed(() => Object.values(transactionsStore.categoryDi
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-white/[0.03]">
              <span class="text-[9px] font-black text-neutral-700 uppercase tracking-[0.3em]">Terverifikasi</span>
-             <div class="flex gap-4">
-               <button @click="openEditModal(tx)" class="p-2 text-neutral-500 active:text-bloomberg-amber">
-                 <Edit class="w-4 h-4" />
+             <div class="flex gap-2">
+               <button @click="openEditModal(tx)" class="p-3 rounded-xl bg-white/[0.03] text-neutral-500 active:text-bloomberg-amber active:bg-bloomberg-amber/10 transition-colors">
+                 <Edit class="w-5 h-5" />
                </button>
-               <button @click="deleteTransaction(tx.id!)" class="p-2 text-neutral-500 active:text-rose-500">
-                 <Trash2 class="w-4 h-4" />
+               <button @click="deleteTransaction(tx.id!)" class="p-3 rounded-xl bg-white/[0.03] text-neutral-500 active:text-rose-500 active:bg-rose-500/10 transition-colors">
+                 <Trash2 class="w-5 h-5" />
                </button>
              </div>
           </div>

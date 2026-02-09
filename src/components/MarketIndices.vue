@@ -45,7 +45,7 @@ const getBg = (change: number) => {
      </div>
 
      <!-- Indices Grid -->
-     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div v-for="item in marketStore.indices" :key="item.description" 
              class="terminal-card bg-[#11141D] p-5 relative overflow-hidden group hover:border-bloomberg-amber/30 transition-all border border-white/5">
              
@@ -98,7 +98,7 @@ const getBg = (change: number) => {
             <span class="text-[9px] font-mono text-neutral-600">DELAYED 15M</span>
         </div>
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
            <div v-for="stock in marketStore.localStocks" :key="stock.symbol" class="flex items-center justify-between group cursor-default">
               <div>
                  <p class="text-[11px] font-black text-white group-hover:text-bloomberg-amber transition-colors">{{ stock.description }}</p>
