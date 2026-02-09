@@ -35,13 +35,37 @@ export const useAuthStore = defineStore('auth', () => {
         return user.value.code === 'GUEST-SESSION' || (user.value.role === 'user' && !isPremium.value)
     })
 
+    // Helper for Cookies (Persistence across refresh)
+    const setCookie = (name: string, value: string, days: number) => {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString()
+        document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+    }
+
+    const getCookie = (name: string) => {
+        return document.cookie.split('; ').reduce((r, v) => {
+            const parts = v.split('=')
+            return parts[0] === name ? decodeURIComponent(parts[1]) : r
+        }, '')
+    }
+
+    const eraseCookie = (name: string) => {
+        document.cookie = `${name}=; Max-Age=-99999999; path=/;`
+    }
+
     // Persistent Session Logic
     async function checkAuth() {
+        // If already have user, don't re-check unless forced
+        if (user.value && !loading.value) return
+
         loading.value = true
-        const savedCode = localStorage.getItem('masteruang_session_code')
-        const isAdminSession = localStorage.getItem('masteruang_admin_session') === 'true'
+        const savedCode = localStorage.getItem('masteruang_session_code') || getCookie('masteruang_session_code')
+        const isAdminSession = localStorage.getItem('masteruang_admin_session') === 'true' || getCookie('masteruang_admin_session') === 'true'
 
         if (savedCode) {
+            // Re-sync cookie and localStorage
+            localStorage.setItem('masteruang_session_code', savedCode)
+            setCookie('masteruang_session_code', savedCode, 7) // Assuming 7 days for cookie persistence
+
             if (isAdminSession && savedCode === 'ADMIN-CONSOLE') {
                 user.value = {
                     id: 'admin-restore',
@@ -50,6 +74,8 @@ export const useAuthStore = defineStore('auth', () => {
                     role: 'admin',
                     expires_at: null
                 }
+                localStorage.setItem('masteruang_admin_session', 'true')
+                setCookie('masteruang_admin_session', 'true', 7)
             } else if (savedCode === 'GUEST-SESSION') {
                 user.value = {
                     id: 'guest-user',
@@ -58,6 +84,8 @@ export const useAuthStore = defineStore('auth', () => {
                     role: 'user',
                     expires_at: null
                 }
+                localStorage.removeItem('masteruang_admin_session')
+                eraseCookie('masteruang_admin_session')
             } else {
                 try {
                     const { data, error: fetchError } = await supabase
@@ -69,13 +97,26 @@ export const useAuthStore = defineStore('auth', () => {
                     if (data && !fetchError) {
                         user.value = data
                         console.log('✅ Session Restored:', data.username)
+
+                        // Ensure it's not expired
+                        if (isExpired.value) {
+                            console.warn('⚠️ Session expired on restore')
+                            await signOut()
+                        }
                     } else {
-                        localStorage.removeItem('masteruang_session_code')
+                        console.warn('❌ Session invalid or profile not found')
+                        await signOut()
                     }
                 } catch (e) {
                     console.error('Session restoration failed')
+                    await signOut() // Clear session on error
                 }
+                localStorage.removeItem('masteruang_admin_session')
+                eraseCookie('masteruang_admin_session')
             }
+        } else {
+            // If no saved code, ensure all session data is cleared
+            await signOut()
         }
         loading.value = false
     }
@@ -148,6 +189,7 @@ export const useAuthStore = defineStore('auth', () => {
             }
 
             localStorage.setItem('masteruang_session_code', normalizedCode)
+            setCookie('masteruang_session_code', normalizedCode, 7)
             return true
         } catch (err: any) {
             error.value = err.message
@@ -183,8 +225,10 @@ export const useAuthStore = defineStore('auth', () => {
 
             user.value = adminProfile
             localStorage.setItem('masteruang_session_code', 'ADMIN-CONSOLE')
+            setCookie('masteruang_session_code', 'ADMIN-CONSOLE', 7)
             // Special flag to remember it's an admin session
             localStorage.setItem('masteruang_admin_session', 'true')
+            setCookie('masteruang_admin_session', 'true', 7)
 
             return true
         } catch (err: any) {
@@ -204,7 +248,9 @@ export const useAuthStore = defineStore('auth', () => {
             expires_at: null
         }
         localStorage.setItem('masteruang_session_code', 'GUEST-SESSION')
+        setCookie('masteruang_session_code', 'GUEST-SESSION', 7)
         localStorage.removeItem('masteruang_admin_session')
+        eraseCookie('masteruang_admin_session')
         return true
     }
 
@@ -212,6 +258,8 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null
         localStorage.removeItem('masteruang_session_code')
         localStorage.removeItem('masteruang_admin_session')
+        eraseCookie('masteruang_session_code')
+        eraseCookie('masteruang_admin_session')
     }
 
     return {

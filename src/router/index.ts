@@ -70,8 +70,28 @@ const router = createRouter({
 })
 
 // Navigation guard middleware
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore()
+
+    // 🔥 FIX: Wait for auth initialization to complete on first load
+    if (authStore.loading) {
+        console.log('⏳ Router: Syncing security layers...')
+        await new Promise((resolve) => {
+            // Check immediately just in case
+            if (!authStore.loading) {
+                resolve(true)
+                return
+            }
+            const unwatch = authStore.$subscribe((_, state) => {
+                if (!state.loading) {
+                    unwatch()
+                    resolve(true)
+                }
+            })
+            setTimeout(() => resolve(false), 8000) // Safety timeout
+        })
+    }
+
     const isAuthenticated = !!authStore.user
     const isPremium = authStore.isPremium
     const isAdmin = authStore.isAdmin
@@ -84,6 +104,7 @@ router.beforeEach((to, from, next) => {
 
     if (requiresAuth && !isAuthenticated) {
         // Must login for these routes
+        console.warn('🔒 Auth Required: Redirecting to Portal')
         next({ name: 'auth' })
     } else if (requiresGuest && isAuthenticated) {
         // Already logged in, go to home or admin
