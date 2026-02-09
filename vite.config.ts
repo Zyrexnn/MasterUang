@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { WebSocketServer, WebSocket } from 'ws'
 
-const AIS_KEY = "2cc55d8ebda9b80070621b84206429afac05b6a7";
+const AIS_KEY = process.env.AIS_KEY || "";
 const AIS_URL = "wss://stream.aisstream.io/v0/stream";
 
 // https://vitejs.dev/config/
@@ -117,7 +117,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/finnhub-proxy', async (req, res) => {
             const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
             const symbol = url.searchParams.get('symbol') || '^JKSE';
-            const token = "d60rg89r01qto1re62cgd60rg89r01qto1re62d0"; // Hardcoded for local dev only
+            const token = process.env.FINNHUB_KEY || "";
 
             try {
               const apiRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${token}`);
@@ -134,7 +134,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/twelve-proxy', async (req, res) => {
             const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
             const symbol = url.searchParams.get('symbol') || 'IDX:JKSE';
-            const apikey = "3af8fc1ac3af4260affaaca4d7fefdea"; // Hardcoded for local dev only
+            const apikey = process.env.TWELVE_KEY || "";
 
             try {
               const apiRes = await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${apikey}`);

@@ -1,7 +1,7 @@
 // api/ais-fetch.js (Vercel Serverless Function)
 import WebSocket from 'ws';
 
-const AIS_KEY = "2cc55d8ebda9b80070621b84206429afac05b6a7";
+const AIS_KEY = process.env.AIS_KEY || "";
 const AIS_URL = "wss://stream.aisstream.io/v0/stream";
 
 export default async function handler(req, res) {

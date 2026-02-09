@@ -1,7 +1,7 @@
 export default async function handler(request, response) {
     const symbol = request.query.symbol || '^JKSE';
-    // Use env var or fallback to the key provided in the prompt (for immediate functionality)
-    const token = process.env.FINNHUB_KEY || 'd60rg89r01qto1re62cgd60rg89r01qto1re62d0';
+    // API key from environment variable (set in Vercel dashboard)
+    const token = process.env.FINNHUB_KEY || "";
 
     try {
         const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${token}`;

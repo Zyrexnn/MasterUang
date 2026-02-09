@@ -1,7 +1,7 @@
 export default async function handler(request, response) {
     const symbol = request.query.symbol || 'IDX:JKSE';
-    // Use env var or fallback to the key provided in the prompt
-    const apikey = process.env.TWELVE_KEY || '3af8fc1ac3af4260affaaca4d7fefdea';
+    // API key from environment variable (set in Vercel dashboard)
+    const apikey = process.env.TWELVE_KEY || "";
 
     try {
         const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${apikey}`;
