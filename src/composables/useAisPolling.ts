@@ -6,9 +6,11 @@ export function useAisPolling() {
     const pollingInterval = ref<number | null>(null);
     const isAutoRefreshEnabled = ref(false);
 
-    // Load preference from localStorage
-    const savedPref = localStorage.getItem('ais_auto_refresh');
-    if (savedPref) isAutoRefreshEnabled.value = savedPref === 'true';
+    // Load preference from localStorage (safe)
+    try {
+        const savedPref = localStorage.getItem('ais_auto_refresh');
+        if (savedPref) isAutoRefreshEnabled.value = savedPref === 'true';
+    } catch { /* noop */ }
 
     const fetchVessels = async () => {
         if (store.isPolling) return;
@@ -66,7 +68,7 @@ export function useAisPolling() {
     };
 
     watch(isAutoRefreshEnabled, (enabled) => {
-        localStorage.setItem('ais_auto_refresh', enabled ? 'true' : 'false');
+        try { localStorage.setItem('ais_auto_refresh', enabled ? 'true' : 'false'); } catch { /* noop */ }
         if (enabled) startPolling();
         else stopPolling();
     });

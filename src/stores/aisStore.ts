@@ -26,10 +26,10 @@ export const useAisStore = defineStore('ais', () => {
     totalPackets: 0
   });
 
-  // Load from localStorage on init
-  const savedData = localStorage.getItem('zen_ais_cache');
-  if (savedData) {
-    try {
+  // Load from localStorage on init (safe)
+  try {
+    const savedData = localStorage.getItem('zen_ais_cache');
+    if (savedData) {
       const parsed = JSON.parse(savedData);
       vessels.value = parsed.vessels || {};
       stats.value.activeCount = Object.keys(vessels.value).length;
@@ -39,22 +39,24 @@ export const useAisStore = defineStore('ais', () => {
       if (savedRegionId && REGIONS[savedRegionId]) {
         selectedRegion.value = REGIONS[savedRegionId];
       }
-    } catch (e) {
-      console.warn('Failed to load AIS cache');
     }
+  } catch (e) {
+    console.warn('Failed to load AIS cache');
   }
 
   // Persist to localStorage whenever vessels change
   watch(vessels, (newVessels) => {
-    localStorage.setItem('zen_ais_cache', JSON.stringify({
-      vessels: newVessels,
-      lastUpdate: lastUpdate.value
-    }));
+    try {
+      localStorage.setItem('zen_ais_cache', JSON.stringify({
+        vessels: newVessels,
+        lastUpdate: lastUpdate.value
+      }));
+    } catch { /* noop */ }
   }, { deep: false });
 
   // Persist region selection
   watch(selectedRegion, (newRegion) => {
-    localStorage.setItem('zen_ais_region', newRegion.id);
+    try { localStorage.setItem('zen_ais_region', newRegion.id); } catch { /* noop */ }
   });
 
   function updateVesselsBatch(newVessels: Record<number, Vessel>) {

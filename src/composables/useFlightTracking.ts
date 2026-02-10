@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { shallowRef, ref, onMounted, onUnmounted, computed } from 'vue';
 
 export interface Aircraft {
     icao24: string;
@@ -16,9 +16,6 @@ export interface Aircraft {
     category: number;
     positionSource: string;
     lastUpdate: number;
-    baseLat: number;
-    baseLng: number;
-    fetchTime: number;
 }
 
 export interface MapBounds {
@@ -28,7 +25,6 @@ export interface MapBounds {
     east: number;
 }
 
-const CACHE_KEY = 'masteruang_flight_cache';
 const CACHE_DURATION = 120000; // 2 minutes - don't fetch if cache is fresh
 
 const CATEGORY_NAMES: Record<number, string> = {
@@ -44,40 +40,9 @@ const POSITION_SOURCES: Record<number, string> = {
     0: 'ADS-B', 1: 'ASTERIX', 2: 'MLAT', 3: 'FLARM'
 };
 
-const velocityToLatLng = (velocity: number, heading: number) => {
-    const headingRad = (heading * Math.PI) / 180;
-    const metersPerDegreeLat = 111320;
-    const metersPerDegreeLng = 111320 * Math.cos((10 * Math.PI) / 180);
-    return {
-        latDelta: (velocity * Math.cos(headingRad)) / metersPerDegreeLat,
-        lngDelta: (velocity * Math.sin(headingRad)) / metersPerDegreeLng
-    };
-};
-
-// Load from localStorage
-const loadCache = (): { data: Record<string, Aircraft>; time: number } | null => {
-    try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-            return JSON.parse(cached);
-        }
-    } catch (e) {
-        console.warn('Cache load failed:', e);
-    }
-    return null;
-};
-
-// Save to localStorage
-const saveCache = (data: Record<string, Aircraft>, time: number) => {
-    try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data, time }));
-    } catch (e) {
-        console.warn('Cache save failed:', e);
-    }
-};
-
 export function useFlightTracking() {
-    const cachedAircraft = ref<Record<string, Aircraft>>({});
+    // Use shallowRef to avoid deep reactivity on large datasets
+    const cachedAircraft = shallowRef<Aircraft[]>([]);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const activeCount = ref(0);
@@ -86,28 +51,13 @@ export function useFlightTracking() {
     const isFollowing = ref(false);
     const isRateLimited = ref(false);
 
-    // Interpolated positions
-    const aircraftList = computed(() => {
-        const now = Date.now();
-        return Object.values(cachedAircraft.value).map(ac => {
-            const elapsed = (now - ac.fetchTime) / 1000;
-            if (!ac.onGround && ac.velocity > 10 && elapsed < 300) {
-                const { latDelta, lngDelta } = velocityToLatLng(ac.velocity, ac.heading);
-                return {
-                    ...ac,
-                    lat: ac.baseLat + (latDelta * elapsed),
-                    lng: ac.baseLng + (lngDelta * elapsed)
-                };
-            }
-            return ac;
-        });
-    });
+    // aircraftList is now just a direct reference — no interpolation overhead
+    const aircraftList = computed(() => cachedAircraft.value);
 
     const fetchAircraft = async (force = false) => {
         // Check if we should skip due to recent fetch
         const timeSinceLastFetch = Date.now() - lastFetchTime.value;
-        if (!force && timeSinceLastFetch < CACHE_DURATION && Object.keys(cachedAircraft.value).length > 0) {
-            console.log('Using cached data, skip fetch');
+        if (!force && timeSinceLastFetch < CACHE_DURATION && cachedAircraft.value.length > 0) {
             return;
         }
 
@@ -129,24 +79,23 @@ export function useFlightTracking() {
             const apiData = await response.json();
 
             if (!apiData.states) {
-                cachedAircraft.value = {};
+                cachedAircraft.value = [];
                 activeCount.value = 0;
                 return;
             }
 
-            const now = Date.now();
-            const newAircraft: Record<string, Aircraft> = {};
+            const newAircraft: Aircraft[] = [];
 
-            apiData.states.slice(0, 600).forEach((s: any) => {
+            // Limit to 300 aircraft for performance
+            for (const s of apiData.states) {
+                if (newAircraft.length >= 300) break;
                 if (s[5] !== null && s[6] !== null) {
-                    newAircraft[s[0]] = {
+                    newAircraft.push({
                         icao24: s[0],
                         callsign: (s[1] || '').trim() || 'UNKN',
                         origin: s[2],
                         lng: s[5],
                         lat: s[6],
-                        baseLat: s[6],
-                        baseLng: s[5],
                         altitude: s[7] || 0,
                         geoAltitude: s[13] || s[7] || 0,
                         onGround: s[8] || false,
@@ -156,18 +105,14 @@ export function useFlightTracking() {
                         squawk: s[14] || null,
                         positionSource: POSITION_SOURCES[s[16]] || 'Unknown',
                         category: s[17] || 0,
-                        lastUpdate: (s[4] || Date.now() / 1000) * 1000,
-                        fetchTime: now
-                    };
+                        lastUpdate: (s[4] || Date.now() / 1000) * 1000
+                    });
                 }
-            });
+            }
 
             cachedAircraft.value = newAircraft;
             activeCount.value = apiData.states.length;
-            lastFetchTime.value = now;
-
-            // Save to localStorage
-            saveCache(newAircraft, now);
+            lastFetchTime.value = Date.now();
         } catch (err: any) {
             error.value = err.message;
         } finally {
@@ -183,33 +128,15 @@ export function useFlightTracking() {
     const getCategoryName = (cat: number) => CATEGORY_NAMES[cat] || 'Unknown';
 
     let timer: number;
-    let interpolationTimer: number;
 
     onMounted(() => {
-        // Try to load from cache first
-        const cached = loadCache();
-        if (cached && (Date.now() - cached.time) < CACHE_DURATION) {
-            console.log('Loaded from localStorage cache');
-            cachedAircraft.value = cached.data;
-            lastFetchTime.value = cached.time;
-            activeCount.value = Object.keys(cached.data).length;
-        } else {
-            // Only fetch if cache is stale or empty
-            fetchAircraft();
-        }
-
+        fetchAircraft();
         // Auto-refresh every 2 minutes
         timer = window.setInterval(() => fetchAircraft(), 120000);
-
-        // Interpolation tick every 3 seconds
-        interpolationTimer = window.setInterval(() => {
-            lastFetchTime.value = lastFetchTime.value; // Trigger reactivity
-        }, 3000);
     });
 
     onUnmounted(() => {
         clearInterval(timer);
-        clearInterval(interpolationTimer);
     });
 
     return {

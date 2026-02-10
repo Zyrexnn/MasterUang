@@ -35,21 +35,36 @@ export const useAuthStore = defineStore('auth', () => {
         return user.value.code === 'GUEST-SESSION' || (user.value.role === 'user' && !isPremium.value)
     })
 
-    // Helper for Cookies (Persistence across refresh)
-    const setCookie = (name: string, value: string, days: number) => {
-        const expires = new Date(Date.now() + days * 864e5).toUTCString()
-        document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+    // Safe storage helpers (handle private browsing / restricted environments)
+    const safeGetItem = (key: string): string | null => {
+        try { return localStorage.getItem(key) } catch { return null }
+    }
+    const safeSetItem = (key: string, value: string) => {
+        try { localStorage.setItem(key, value) } catch { /* noop */ }
+    }
+    const safeRemoveItem = (key: string) => {
+        try { localStorage.removeItem(key) } catch { /* noop */ }
     }
 
-    const getCookie = (name: string) => {
-        return document.cookie.split('; ').reduce((r, v) => {
-            const parts = v.split('=')
-            return parts[0] === name ? decodeURIComponent(parts[1]) : r
-        }, '')
+    // Helper for Cookies (Persistence across refresh)
+    const setCookie = (name: string, value: string, days: number) => {
+        try {
+            const expires = new Date(Date.now() + days * 864e5).toUTCString()
+            document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+        } catch { /* noop */ }
+    }
+
+    const getCookie = (name: string): string => {
+        try {
+            return document.cookie.split('; ').reduce((r, v) => {
+                const parts = v.split('=')
+                return parts[0] === name ? decodeURIComponent(parts[1]) : r
+            }, '')
+        } catch { return '' }
     }
 
     const eraseCookie = (name: string) => {
-        document.cookie = `${name}=; Max-Age=-99999999; path=/;`
+        try { document.cookie = `${name}=; Max-Age=-99999999; path=/;` } catch { /* noop */ }
     }
 
     // Persistent Session Logic
@@ -58,13 +73,13 @@ export const useAuthStore = defineStore('auth', () => {
         if (user.value && !loading.value) return
 
         loading.value = true
-        const savedCode = localStorage.getItem('masteruang_session_code') || getCookie('masteruang_session_code')
-        const isAdminSession = localStorage.getItem('masteruang_admin_session') === 'true' || getCookie('masteruang_admin_session') === 'true'
+        const savedCode = safeGetItem('masteruang_session_code') || getCookie('masteruang_session_code')
+        const isAdminSession = safeGetItem('masteruang_admin_session') === 'true' || getCookie('masteruang_admin_session') === 'true'
 
         if (savedCode) {
             // Re-sync cookie and localStorage
-            localStorage.setItem('masteruang_session_code', savedCode)
-            setCookie('masteruang_session_code', savedCode, 7) // Assuming 7 days for cookie persistence
+            safeSetItem('masteruang_session_code', savedCode)
+            setCookie('masteruang_session_code', savedCode, 7)
 
             if (isAdminSession && savedCode === 'ADMIN-CONSOLE') {
                 user.value = {
@@ -74,7 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
                     role: 'admin',
                     expires_at: null
                 }
-                localStorage.setItem('masteruang_admin_session', 'true')
+                safeSetItem('masteruang_admin_session', 'true')
                 setCookie('masteruang_admin_session', 'true', 7)
             } else if (savedCode === 'GUEST-SESSION') {
                 user.value = {
@@ -84,7 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
                     role: 'user',
                     expires_at: null
                 }
-                localStorage.removeItem('masteruang_admin_session')
+                safeRemoveItem('masteruang_admin_session')
                 eraseCookie('masteruang_admin_session')
             } else {
                 try {
@@ -111,7 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
                     console.error('Session restoration failed')
                     await signOut() // Clear session on error
                 }
-                localStorage.removeItem('masteruang_admin_session')
+                safeRemoveItem('masteruang_admin_session')
                 eraseCookie('masteruang_admin_session')
             }
         } else {
@@ -188,7 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
                 user.value = createdProfile
             }
 
-            localStorage.setItem('masteruang_session_code', normalizedCode)
+            safeSetItem('masteruang_session_code', normalizedCode)
             setCookie('masteruang_session_code', normalizedCode, 7)
             return true
         } catch (err: any) {
@@ -224,10 +239,10 @@ export const useAuthStore = defineStore('auth', () => {
             }
 
             user.value = adminProfile
-            localStorage.setItem('masteruang_session_code', 'ADMIN-CONSOLE')
+            safeSetItem('masteruang_session_code', 'ADMIN-CONSOLE')
             setCookie('masteruang_session_code', 'ADMIN-CONSOLE', 7)
             // Special flag to remember it's an admin session
-            localStorage.setItem('masteruang_admin_session', 'true')
+            safeSetItem('masteruang_admin_session', 'true')
             setCookie('masteruang_admin_session', 'true', 7)
 
             return true
@@ -247,17 +262,17 @@ export const useAuthStore = defineStore('auth', () => {
             role: 'user',
             expires_at: null
         }
-        localStorage.setItem('masteruang_session_code', 'GUEST-SESSION')
+        safeSetItem('masteruang_session_code', 'GUEST-SESSION')
         setCookie('masteruang_session_code', 'GUEST-SESSION', 7)
-        localStorage.removeItem('masteruang_admin_session')
+        safeRemoveItem('masteruang_admin_session')
         eraseCookie('masteruang_admin_session')
         return true
     }
 
     async function signOut() {
         user.value = null
-        localStorage.removeItem('masteruang_session_code')
-        localStorage.removeItem('masteruang_admin_session')
+        safeRemoveItem('masteruang_session_code')
+        safeRemoveItem('masteruang_admin_session')
         eraseCookie('masteruang_session_code')
         eraseCookie('masteruang_admin_session')
     }
