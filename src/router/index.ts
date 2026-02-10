@@ -55,6 +55,12 @@ const router = createRouter({
             meta: { requiresAuth: true, requiresPremium: true }
         },
         {
+            path: '/flight-tracker',
+            name: 'flight-tracker',
+            component: () => import('../views/FlightTrackerView.vue'),
+            meta: { requiresAuth: true, requiresPremium: true }
+        },
+        {
             path: '/profile',
             name: 'profile',
             component: () => import('../views/ProfileView.vue'),

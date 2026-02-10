@@ -13,6 +13,7 @@ import {
   Bell,
   Newspaper,
   Anchor,
+  Plane,
   Menu,
   X,
   Lock,
@@ -36,6 +37,7 @@ const navItems = [
   { name: 'AI Advisor', icon: MessageSquare, path: '/ai-advisor', premium: true },
   { name: 'World News', icon: Newspaper, path: '/world-news' },
   { name: 'Ship Tracker', icon: Anchor, path: '/ship-tracker', premium: true },
+  { name: 'Flight Tracker', icon: Plane, path: '/flight-tracker', premium: true },
   { name: 'Profile', icon: Settings, path: '/profile' },
   { name: 'Admin', icon: ShieldCheck, path: '/admin', adminOnly: true },
 ]
