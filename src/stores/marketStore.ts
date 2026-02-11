@@ -71,13 +71,13 @@ export const useMarketStore = defineStore('market', () => {
     const fetchMarketData = async (force: boolean = false) => {
         if (!force && indices.value.length > 0) {
             const isFresh = (Date.now() - indices.value[0].updatedAt) < CACHE_TTL;
-            if (isFresh) return;
+            if (isFresh) return; 
         }
 
         loading.value = true;
         error.value = null;
 
-        const targets = [
+        const targets = [   
             { s: '^JKSE', n: 'IHSG (IDX)', type: 'INDEX' },
             { s: '^GSPC', n: 'S&P 500', type: 'INDEX' },
             { s: 'XAU', n: 'Gold (XAU)', type: 'COMMODITY' }, // Finnhub uses XAU? No, likely 'OANDA:XAU_USD' or just custom. Let's try to map XAUUSD if Finnhub supports it or fallback.
