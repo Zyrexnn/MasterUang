@@ -1,7 +1,8 @@
 // api/ai_advisor.rs — AI Advisor Proxy (Rust Serverless)
 use serde::{Deserialize, Serialize};
-use serde_json::{json, from_slice};
+use serde_json::json;
 use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode};
+use http_body_util::BodyExt;
 
 #[derive(Deserialize)]
 struct AdvisorRequest {
@@ -65,8 +66,9 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         }
     };
 
-    // ── Parse Request Body Manual ──────────────────
-    let body: AdvisorRequest = match from_slice(req.body().as_ref()) {
+    // ── Parse Request Body (Hyper 1.0 style) ───────
+    let body_bytes = req.into_body().collect().await?.to_bytes();
+    let body: AdvisorRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
         Err(_) => {
             return Ok(Response::builder()

@@ -1,8 +1,9 @@
 // api/analyze.rs — Financial Math Engine (Rust Serverless)
 use serde::{Deserialize, Serialize};
-use serde_json::{json, from_slice};
 use std::collections::HashMap;
 use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode};
+use http_body_util::BodyExt;
+use serde_json::json;
 
 #[derive(Deserialize)]
 struct AnalyzeRequest {
@@ -68,8 +69,9 @@ async fn main() -> Result<(), Error> {
 }
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
-    // ── Parse JSON body ─────────────────────
-    let body: AnalyzeRequest = match from_slice(req.body().as_ref()) {
+    // ── Parse Request Body (Hyper 1.0 style) ───────
+    let body_bytes = req.into_body().collect().await?.to_bytes();
+    let body: AnalyzeRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
         Err(_) => {
             return Ok(Response::builder()
