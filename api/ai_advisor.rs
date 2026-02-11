@@ -1,12 +1,9 @@
 // api/ai_advisor.rs — AI Advisor Proxy (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use vercel_runtime::{run, service_fn, Error, Request};
-use http::{Response, StatusCode};
-use http_body_util::{BodyExt, Full};
-use bytes::Bytes;
-
-type Body = Full<Bytes>;
+use vercel_runtime::{run, service_fn, Error, Request, Response};
+use http::StatusCode;
+use http_body_util::BodyExt;
 
 #[derive(Deserialize)]
 struct AdvisorRequest {
@@ -55,33 +52,34 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
+pub async fn handler(req: Request) -> Result<Response, Error> {
+    // ── Validate API Key ───────────────────────────
     let api_key = match std::env::var("GEMINI_API_KEY") {
         Ok(k) if !k.is_empty() => k,
         _ => {
-            let res = json!({
-                "error": "GEMINI_API_KEY not configured on server",
-                "reply": "Maaf, layanan AI belum dikonfigurasi."
-            }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(Full::new(Bytes::from(res)))?);
+                .body(json!({
+                    "error": "GEMINI_API_KEY not configured on server",
+                    "reply": "Maaf, layanan AI belum dikonfigurasi."
+                }).to_string().into())?);
         }
     };
 
+    // ── Parse Request Body (Hyper 1.0 style) ───────
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AdvisorRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
         Err(_) => {
-            let res = json!({ "error": "Invalid JSON body" }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Full::new(Bytes::from(res)))?);
+                .body(json!({ "error": "Invalid JSON body" }).to_string().into())?);
         }
     };
 
+    // ── Call Gemini ────────────────────────────────
     let system_prompt = format!(
         "Context: {}\n\nUser Question: {}\n\nInstructions: Provide short, professional financial advice as MasterUang AI Advisor. Respond in Indonesian unless the user speaks English.",
         body.context, body.prompt
@@ -100,11 +98,10 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let gemini_data: GeminiResponse = res.json().await?;
 
     if let Some(err) = gemini_data.error {
-        let res = json!({ "error": err.message, "reply": "Layanan AI error." }).to_string();
         return Ok(Response::builder()
             .status(StatusCode::BAD_GATEWAY)
             .header("Content-Type", "application/json")
-            .body(Full::new(Bytes::from(res)))?);
+            .body(json!({ "error": err.message, "reply": "Layanan AI error." }).to_string().into())?);
     }
 
     let ai_text = gemini_data.candidates
@@ -120,9 +117,8 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         model: GEMINI_MODEL.to_string(),
     };
 
-    let final_res = serde_json::to_string(&result)?;
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
-        .body(Full::new(Bytes::from(final_res)))?)
+        .body(serde_json::to_string(&result)?.into())?)
 }

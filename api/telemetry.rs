@@ -1,12 +1,8 @@
 // api/telemetry.rs — Aggregator Telemetry (Rust Serverless)
 use serde::Serialize;
 use serde_json::{json, Value};
-use vercel_runtime::{run, service_fn, Error, Request};
-use http::{Response, StatusCode};
-use http_body_util::Full;
-use bytes::Bytes;
-
-type Body = Full<Bytes>;
+use vercel_runtime::{run, service_fn, Error, Request, Response};
+use http::StatusCode;
 
 #[derive(Serialize)]
 struct Aircraft {
@@ -42,7 +38,7 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
+pub async fn handler(req: Request) -> Result<Response, Error> {
     let query_str = req.uri().query().unwrap_or("");
     let limit: usize = query_str.split('&')
         .find(|s| s.starts_with("limit="))
@@ -64,19 +60,17 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let res = match request.send().await {
         Ok(r) => r,
         Err(e) => {
-            let err_res = json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::BAD_GATEWAY)
-                .body(Full::new(Bytes::from(err_res)))?);
+                .body(json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string().into())?);
         }
     };
 
     if res.status() == 429 {
-        let err_res = json!({ "error": "Rate limited" }).to_string();
         return Ok(Response::builder()
             .status(StatusCode::TOO_MANY_REQUESTS)
             .header("Retry-After", "120")
-            .body(Full::new(Bytes::from(err_res)))?);
+            .body(json!({ "error": "Rate limited" }).to_string().into())?);
     }
 
     let data: Value = res.json().await?;
@@ -112,10 +106,9 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
     let resp_data = TelemetryResponse { aircraft, total_global, timestamp: now };
 
-    let final_res = serde_json::to_string(&resp_data)?;
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=120, stale-while-revalidate=60")
-        .body(Full::new(Bytes::from(final_res)))?)
+        .body(serde_json::to_string(&resp_data)?.into())?)
 }

@@ -1,13 +1,10 @@
 // api/analyze.rs — Financial Math Engine (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use vercel_runtime::{run, service_fn, Error, Request};
-use http::{Response, StatusCode};
-use http_body_util::{BodyExt, Full};
-use bytes::Bytes;
+use vercel_runtime::{run, service_fn, Error, Request, Response};
+use http::StatusCode;
+use http_body_util::BodyExt;
 use serde_json::json;
-
-type Body = Full<Bytes>;
 
 #[derive(Deserialize)]
 struct AnalyzeRequest {
@@ -72,16 +69,15 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
+pub async fn handler(req: Request) -> Result<Response, Error> {
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AnalyzeRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
         Err(_) => {
-            let res = json!({ "error": "Invalid or empty JSON body" }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Full::new(Bytes::from(res)))?);
+                .body(json!({ "error": "Invalid or empty JSON body" }).to_string().into())?);
         }
     };
 
@@ -159,10 +155,9 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         compound_interest: compound_result,
     };
 
-    let final_res = serde_json::to_string(&resp_data)?;
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=60, stale-while-revalidate=30")
-        .body(Full::new(Bytes::from(final_res)))?)
+        .body(serde_json::to_string(&resp_data)?.into())?)
 }
