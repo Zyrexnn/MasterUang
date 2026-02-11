@@ -1,7 +1,8 @@
 // api/telemetry.rs — Aggregator Telemetry (Rust Serverless)
 use serde::Serialize;
 use serde_json::{json, Value};
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
+use http::StatusCode;
 
 #[derive(Serialize)]
 struct Aircraft {
@@ -61,7 +62,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         Err(e) => {
             return Ok(Response::builder()
                 .status(StatusCode::BAD_GATEWAY)
-                .body(json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string().into())?);
+                .body(Body::from(json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string()))?);
         }
     };
 
@@ -69,7 +70,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         return Ok(Response::builder()
             .status(StatusCode::TOO_MANY_REQUESTS)
             .header("Retry-After", "120")
-            .body(json!({ "error": "Rate limited" }).to_string().into())?);
+            .body(Body::from(json!({ "error": "Rate limited" }).to_string()))?);
     }
 
     let data: Value = res.json().await?;
@@ -109,5 +110,5 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=120, stale-while-revalidate=60")
-        .body(serde_json::to_string(&resp_data)?.into())?)
+        .body(Body::from(serde_json::to_string(&resp_data)?))?)
 }

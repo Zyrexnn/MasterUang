@@ -1,7 +1,8 @@
 // api/analyze.rs — Financial Math Engine (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
+use http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
 
@@ -69,7 +70,7 @@ async fn main() -> Result<(), Error> {
 }
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
-    // ── Parse Request Body (Hyper 1.0 style) ───────
+    // ── Parse Request Body ─────────────────────────
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AnalyzeRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
@@ -77,7 +78,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(json!({ "error": "Invalid or empty JSON body" }).to_string().into())?);
+                .body(Body::from(json!({ "error": "Invalid or empty JSON body" }).to_string()))?);
         }
     };
 
@@ -160,5 +161,5 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=60, stale-while-revalidate=30")
-        .body(serde_json::to_string(&resp_data)?.into())?)
+        .body(Body::from(serde_json::to_string(&resp_data)?))?)
 }

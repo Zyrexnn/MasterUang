@@ -1,7 +1,8 @@
 // api/ai_advisor.rs — AI Advisor Proxy (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
+use http::StatusCode;
 use http_body_util::BodyExt;
 
 #[derive(Deserialize)]
@@ -59,14 +60,14 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
             return Ok(Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(json!({
+                .body(Body::from(json!({
                     "error": "GEMINI_API_KEY not configured on server",
                     "reply": "Maaf, layanan AI belum dikonfigurasi."
-                }).to_string().into())?);
+                }).to_string()))?);
         }
     };
 
-    // ── Parse Request Body (Hyper 1.0 style) ───────
+    // ── Parse Request Body ─────────────────────────
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AdvisorRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
@@ -74,7 +75,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(json!({ "error": "Invalid JSON body" }).to_string().into())?);
+                .body(Body::from(json!({ "error": "Invalid JSON body" }).to_string()))?);
         }
     };
 
@@ -100,7 +101,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         return Ok(Response::builder()
             .status(StatusCode::BAD_GATEWAY)
             .header("Content-Type", "application/json")
-            .body(json!({ "error": err.message, "reply": "Layanan AI error." }).to_string().into())?);
+            .body(Body::from(json!({ "error": err.message, "reply": "Layanan AI error." }).to_string()))?);
     }
 
     let ai_text = gemini_data.candidates
@@ -119,5 +120,5 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&result)?.into())?)
+        .body(Body::from(serde_json::to_string(&result)?))?)
 }
