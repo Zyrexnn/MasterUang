@@ -1,8 +1,12 @@
 // api/telemetry.rs — Aggregator Telemetry (Rust Serverless)
 use serde::Serialize;
 use serde_json::{json, Value};
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
-use http::StatusCode;
+use vercel_runtime::{run, service_fn, Error, Request};
+use http::{Response, StatusCode};
+use http_body_util::Full;
+use bytes::Bytes;
+
+type Body = Full<Bytes>;
 
 #[derive(Serialize)]
 struct Aircraft {
@@ -60,17 +64,19 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let res = match request.send().await {
         Ok(r) => r,
         Err(e) => {
+            let err_res = json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::BAD_GATEWAY)
-                .body(Body::from(json!({ "error": format!("OpenSky unreachable: {}", e) }).to_string()))?);
+                .body(Full::new(Bytes::from(err_res)))?);
         }
     };
 
     if res.status() == 429 {
+        let err_res = json!({ "error": "Rate limited" }).to_string();
         return Ok(Response::builder()
             .status(StatusCode::TOO_MANY_REQUESTS)
             .header("Retry-After", "120")
-            .body(Body::from(json!({ "error": "Rate limited" }).to_string()))?);
+            .body(Full::new(Bytes::from(err_res)))?);
     }
 
     let data: Value = res.json().await?;
@@ -106,9 +112,10 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
     let resp_data = TelemetryResponse { aircraft, total_global, timestamp: now };
 
+    let final_res = serde_json::to_string(&resp_data)?;
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=120, stale-while-revalidate=60")
-        .body(Body::from(serde_json::to_string(&resp_data)?))?)
+        .body(Full::new(Bytes::from(final_res)))?)
 }

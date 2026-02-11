@@ -1,10 +1,13 @@
 // api/analyze.rs — Financial Math Engine (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
-use http::StatusCode;
-use http_body_util::BodyExt;
+use vercel_runtime::{run, service_fn, Error, Request};
+use http::{Response, StatusCode};
+use http_body_util::{BodyExt, Full};
+use bytes::Bytes;
 use serde_json::json;
+
+type Body = Full<Bytes>;
 
 #[derive(Deserialize)]
 struct AnalyzeRequest {
@@ -19,7 +22,7 @@ struct Transaction {
     category: String,
     amount: f64,
     #[serde(rename = "type")]
-    tx_type: String, // "income" | "expense"
+    tx_type: String, 
     date: String,
 }
 
@@ -70,19 +73,18 @@ async fn main() -> Result<(), Error> {
 }
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
-    // ── Parse Request Body ─────────────────────────
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AnalyzeRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
         Err(_) => {
+            let res = json!({ "error": "Invalid or empty JSON body" }).to_string();
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Body::from(json!({ "error": "Invalid or empty JSON body" }).to_string()))?);
+                .body(Full::new(Bytes::from(res)))?);
         }
     };
 
-    // ── Aggregate Transactions ─────────────────────
     let mut income: f64 = 0.0;
     let mut expenses: f64 = 0.0;
     let mut category_dist: HashMap<String, f64> = HashMap::new();
@@ -157,9 +159,10 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         compound_interest: compound_result,
     };
 
+    let final_res = serde_json::to_string(&resp_data)?;
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .header("Cache-Control", "s-maxage=60, stale-while-revalidate=30")
-        .body(Body::from(serde_json::to_string(&resp_data)?))?)
+        .body(Full::new(Bytes::from(final_res)))?)
 }
