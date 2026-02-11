@@ -7,7 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use vercel_runtime::{run, service_fn, Error, Request, RequestPayloadExt};
+use vercel_runtime::{run, service_fn, Error, Request, RequestExt};
 
 // ── Types ──────────────────────────────────────────
 
