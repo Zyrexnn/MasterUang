@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Rust build artifacts
+/target
+Cargo.lock
+
 # Security: Ignore environment variables
 .env
 .env.*

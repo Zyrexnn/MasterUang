@@ -25,7 +25,7 @@ export const useMarketStore = defineStore('market', () => {
         try {
             // Attempt 1: Finnhub
             const res = await fetch(`/api/finnhub-proxy?symbol=${encodeURIComponent(symbol)}`);
-            if (res.ok) {
+            if (res.ok) {   
                 const data = await res.json();
                 // Finnhub response: c (current), pc (previous close), dp (percent change)
                 if (data.c) {
