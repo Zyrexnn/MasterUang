@@ -400,45 +400,24 @@ export const formatMarketCap = (val: number) => {
  * Send message to Gemini AI
  */
 export async function sendGeminiMessage(prompt: string, context: string): Promise<string> {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    // Use v1 for Gemini 2.5 Flash (GA as of June 2025)
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-    const body = {
-        contents: [{
-            parts: [{
-                text: `Context: ${context}\n\nUser Question: ${prompt}\n\nInstructions: Provide short, professional financial advice as MasterUang AI Advisor. Respond in Indonesian unless the user speaks English.`
-            }]
-        }]
-    };
-
     try {
-        const response = await fetch(url, {
+        const response = await fetch('/api/ai_advisor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({ prompt, context })
         });
 
         const data = await response.json();
 
         if (data.error) {
-            console.error('Gemini API Error Detail:', JSON.stringify(data.error, null, 2));
-            if (data.error.status === 'PERMISSION_DENIED') {
-                return "Akses AI ditolak. Periksa apakah API Key Anda valid.";
-            }
-            return "Maaf, layanan AI sedang sibuk. Silakan coba lagi nanti.";
+            console.error('AI Proxy Error:', data.error);
+            return data.reply || "Maaf, asisten AI sedang mengalami gangguan.";
         }
 
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!aiText) {
-            console.warn('Gemini Response Empty:', data);
-            return "Maaf, saya tidak dapat merespon saat ini. Silakan coba pertanyaan lain.";
-        }
-
-        return aiText;
+        return data.reply || "Maaf, asisten tidak memberikan respon.";
     } catch (error) {
-        console.error('Gemini Fetch Error:', error);
-        return "Gagal terhubung ke AI. Periksa koneksi internet Anda.";
+        console.error('AI Fetch Error:', error);
+        return "Gagal terhubung ke AI Advisor. Periksa koneksi internet Anda.";
     }
 }
 

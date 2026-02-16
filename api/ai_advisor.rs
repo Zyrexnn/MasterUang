@@ -44,7 +44,7 @@ struct GeminiError {
     status: Option<String>,
 }
 
-const GEMINI_MODEL: &str = "gemini-2.5-flash";
+const GEMINI_MODEL: &str = "gemini-2.0-flash"; // Using 2.0 Flash as the standard
 const GEMINI_BASE_URL: &str = "https://generativelanguage.googleapis.com/v1/models";
 
 #[tokio::main]
@@ -61,13 +61,13 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
                 .body(json!({
-                    "error": "GEMINI_API_KEY not configured on server",
-                    "reply": "Maaf, layanan AI belum dikonfigurasi."
+                    "error": "GEMINI_API_KEY not configured",
+                    "reply": "Maaf, sistem AI sedang offline karena API Key belum dikonfigurasi."
                 }).to_string())?);
         }
     };
 
-    // ── Parse Request Body (Hyper 1.0 style) ───────
+    // ── Parse Request Body ───────
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AdvisorRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,
@@ -75,22 +75,43 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
             return Ok(Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(json!({ "error": "Invalid JSON body" }).to_string())?);
+                .body(json!({ "error": "Payload tidak valid" }).to_string())?);
         }
     };
 
-    // ── Call Gemini ────────────────────────────────
-    let system_prompt = format!(
-        "Context: {}\n\nUser Question: {}\n\nInstructions: Provide short, professional financial advice as MasterUang AI Advisor. Respond in Indonesian unless the user speaks English.",
-        body.context, body.prompt
-    );
+    // ── System Persona & Instructions ────────────────
+    let system_instructions = "
+    Anda adalah 'MasterUang AI Advisor', asisten keuangan elit dengan gaya bicara profesional, tajam, dan analitis layaknya analis Bloomberg. 
+    Tujuan Anda adalah membantu pengguna mengelola keuangan mereka dengan bijak berdasarkan data transaksi yang diberikan.
+
+    Karakteristik Jawaban:
+    1. Profesional & Analitis: Gunakan istilah keuangan yang tepat namun mudah dimengerti. 
+    2. Data-Driven: Selalu rujuk ke data saldo atau kategori pengeluaran jika tersedia di context.
+    3. Actionable: Berikan saran konkret, bukan hanya teori (misal: 'Anda bisa menghemat 10% dengan mengurangi kategori Hiburan').
+    4. Hemat Kata: Jangan terlalu bertele-tele. To-the-point namun sopan.
+    5. Formatting: Gunakan Markdown (bold, bullet points) untuk membuat struktur jawaban yang jelas.
+
+    Gunakan Bahasa Indonesia secara default, kecuali jika pengguna bertanya dalam bahasa lain.
+    ";
+
+    let context_data = format!("Context Keuangan Pengguna:\n{}\n\nUser Prompt: {}", body.context, body.prompt);
 
     let gemini_url = format!("{}/{}:generateContent?key={}", GEMINI_BASE_URL, GEMINI_MODEL, api_key);
     let client = reqwest::Client::new();
     
     let res = client.post(&gemini_url)
         .json(&json!({
-            "contents": [{ "parts": [{ "text": system_prompt }] }]
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{ "text": format!("{}\n\n{}", system_instructions, context_data) }]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.3,
+                "topP": 0.8,
+                "maxOutputTokens": 1024
+            }
         }))
         .send()
         .await?;
@@ -101,7 +122,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
         return Ok(Response::builder()
             .status(StatusCode::BAD_GATEWAY)
             .header("Content-Type", "application/json")
-            .body(json!({ "error": err.message, "reply": "Layanan AI error." }).to_string())?);
+            .body(json!({ "error": err.message, "reply": "Layanan pemrosesan AI sedang mengalami gangguan (Upstream Error)." }).to_string())?);
     }
 
     let ai_text = gemini_data.candidates
@@ -110,7 +131,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
         .and_then(|c| c.parts)
         .and_then(|p| p.into_iter().next())
         .and_then(|p| p.text)
-        .unwrap_or_else(|| "Maaf, saya tidak dapat merespon.".to_string());
+        .unwrap_or_else(|| "Maaf, sistem gagal mensintesa jawaban. Silakan coba beberapa saat lagi.".to_string());
 
     let result = AdvisorResponse {
         reply: ai_text,
