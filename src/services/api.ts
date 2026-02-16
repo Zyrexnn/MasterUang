@@ -400,6 +400,7 @@ export const formatMarketCap = (val: number) => {
  * Send message to Gemini AI
  */
 export async function sendGeminiMessage(prompt: string, context: string): Promise<string> {
+    // 1. Try to call the Rust Proxy first (Works in Vercel/Production)
     try {
         const response = await fetch('/api/ai_advisor', {
             method: 'POST',
@@ -407,17 +408,44 @@ export async function sendGeminiMessage(prompt: string, context: string): Promis
             body: JSON.stringify({ prompt, context })
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-            console.error('AI Proxy Error:', data.error);
-            return data.reply || "Maaf, asisten AI sedang mengalami gangguan.";
+        if (response.ok) {
+            const data = await response.json();
+            if (data.reply) return data.reply;
         }
+    } catch (e) {
+        console.warn('AI Proxy not available locally, falling back to direct client call.');
+    }
 
-        return data.reply || "Maaf, asisten tidak memberikan respon.";
+    // 2. Fallback: Direct Gemini Call (Works in Local Dev / npm run dev)
+    try {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        const systemInstructions = `Anda adalah 'MasterUang AI Advisor', asisten keuangan elit dengan gaya bicara profesional, tajam, dan analitis layaknya analis Bloomberg. 
+        Karakteristik: Data-Driven, Actionable, Hemat Kata. Gunakan Markdown.`;
+
+        const body = {
+            contents: [{
+                parts: [{
+                    text: `${systemInstructions}\n\nContext Keuangan:\n${context}\n\nUser Question: ${prompt}`
+                }]
+            }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        return aiText || "Maaf, sistem AI sedang offline. Silakan coba lagi nanti.";
     } catch (error) {
-        console.error('AI Fetch Error:', error);
-        return "Gagal terhubung ke AI Advisor. Periksa koneksi internet Anda.";
+        console.error('Direct Gemini Error:', error);
+        return "Gagal terhubung ke AI. Periksa koneksi internet dan API Key Anda di .env.";
     }
 }
 
