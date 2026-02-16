@@ -1,7 +1,7 @@
 // api/ai_advisor.rs — AI Advisor Proxy (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use vercel_runtime::{run, service_fn, Error, Request, Response};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
 use http::StatusCode;
 use http_body_util::BodyExt;
 
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response, Error> {
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     // ── Validate API Key ───────────────────────────
     let api_key = match std::env::var("GEMINI_API_KEY") {
         Ok(k) if !k.is_empty() => k,

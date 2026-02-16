@@ -1,7 +1,7 @@
 // api/telemetry.rs — Aggregator Telemetry (Rust Serverless)
 use serde::Serialize;
 use serde_json::{json, Value};
-use vercel_runtime::{run, service_fn, Error, Request, Response};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
 use http::StatusCode;
 
 #[derive(Serialize)]
@@ -38,7 +38,7 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response, Error> {
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let query_str = req.uri().query().unwrap_or("");
     let limit: usize = query_str.split('&')
         .find(|s| s.starts_with("limit="))
@@ -112,3 +112,6 @@ pub async fn handler(req: Request) -> Result<Response, Error> {
         .header("Cache-Control", "s-maxage=120, stale-while-revalidate=60")
         .body(serde_json::to_string(&resp_data)?.into())?)
 }
+
+
+

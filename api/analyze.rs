@@ -1,7 +1,7 @@
 // api/analyze.rs — Financial Math Engine (Rust Serverless)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use vercel_runtime::{run, service_fn, Error, Request, Response};
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response};
 use http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
@@ -49,7 +49,7 @@ struct MonthStat {
     expense: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize)]    
 struct CompoundInterestResult {
     future_value: f64,
     total_interest: f64,
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
 
-pub async fn handler(req: Request) -> Result<Response, Error> {
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     let body_bytes = req.into_body().collect().await?.to_bytes();
     let body: AnalyzeRequest = match serde_json::from_slice(&body_bytes) {
         Ok(b) => b,

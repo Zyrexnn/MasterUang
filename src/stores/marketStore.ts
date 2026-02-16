@@ -117,6 +117,8 @@ export const useMarketStore = defineStore('market', () => {
                 else if (item.type === 'STOCK') localStocks.value.push(item);
             });
 
+
+            
         } catch (e: any) {
             error.value = 'Data partially unavailable';
         } finally {
