@@ -424,8 +424,8 @@ export async function sendGeminiMessage(prompt: string, context: string): Promis
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) throw new Error("VITE_GEMINI_API_KEY is not defined in .env");
 
-        // Use v1beta for the latest version if v1 fails, and use 1.5-flash for stability
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Use v1beta and 2.0-flash for maximum feature support and performance
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const systemInstructions = `Anda adalah 'MasterUang AI Advisor', asisten keuangan elit dengan gaya bicara profesional, tajam, dan analitis layaknya analis Bloomberg. 
         Karakteristik: Data-Driven, Actionable, Hemat Kata. Gunakan Markdown.`;

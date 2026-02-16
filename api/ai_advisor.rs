@@ -44,9 +44,9 @@ struct GeminiError {
     status: Option<String>,
 }
 
-// Using 1.5-flash as it is definitely available in v1 endpoint
-const GEMINI_MODEL: &str = "gemini-1.5-flash"; 
-const GEMINI_BASE_URL: &str = "https://generativelanguage.googleapis.com/v1/models";
+// Switching to 2.0-flash and v1beta as per user request (and for better compatibility)
+const GEMINI_MODEL: &str = "gemini-2.0-flash"; 
+const GEMINI_BASE_URL: &str = "https://generativelanguage.googleapis.com/v1beta/models";
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
