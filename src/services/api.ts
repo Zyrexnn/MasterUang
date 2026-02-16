@@ -411,15 +411,21 @@ export async function sendGeminiMessage(prompt: string, context: string): Promis
         if (response.ok) {
             const data = await response.json();
             if (data.reply) return data.reply;
+        } else {
+            const errBody = await response.text();
+            console.warn(`Proxy failed (Status ${response.status}):`, errBody);
         }
     } catch (e) {
-        console.warn('AI Proxy not available locally, falling back to direct client call.');
+        console.warn('AI Proxy connection failed, trying fallback...');
     }
 
-    // 2. Fallback: Direct Gemini Call (Works in Local Dev / npm run dev)
+    // 2. Fallback: Direct Gemini Call (Works locally or if Proxy fails)
     try {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        if (!apiKey) throw new Error("VITE_GEMINI_API_KEY is not defined in .env");
+
+        // Use v1beta for the latest version if v1 fails, and use 1.5-flash for stability
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const systemInstructions = `Anda adalah 'MasterUang AI Advisor', asisten keuangan elit dengan gaya bicara profesional, tajam, dan analitis layaknya analis Bloomberg. 
         Karakteristik: Data-Driven, Actionable, Hemat Kata. Gunakan Markdown.`;
@@ -440,12 +446,17 @@ export async function sendGeminiMessage(prompt: string, context: string): Promis
         });
 
         const data = await response.json();
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
+        if (!response.ok) {
+            console.error('Gemini API Error Response:', data);
+            return `AI Error (${response.status}): ${data.error?.message || "Internal API Error"}`;
+        }
+
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         return aiText || "Maaf, sistem AI sedang offline. Silakan coba lagi nanti.";
-    } catch (error) {
-        console.error('Direct Gemini Error:', error);
-        return "Gagal terhubung ke AI. Periksa koneksi internet dan API Key Anda di .env.";
+    } catch (error: any) {
+        console.error('Direct Gemini Fallback Error:', error);
+        return `Gagal terhubung ke AI: ${error.message}. Periksa koneksi internet dan API Key di .env.`;
     }
 }
 

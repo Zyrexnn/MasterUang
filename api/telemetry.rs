@@ -3,6 +3,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use vercel_runtime::{run, service_fn, Error, Request, Response};
 use http::StatusCode;
+use http_body_util::BodyExt;
 
 #[derive(Serialize)]
 struct Aircraft {
