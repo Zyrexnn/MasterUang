@@ -209,6 +209,9 @@ onUnmounted(() => {
 .plane-node { background: transparent !important; border: none !important; }
 .leaflet-container { background: #0B0E11 !important; outline: none; }
 
+
+
+
 .flight-cluster {
   background: rgba(251, 191, 36, 0.15);
   border: 1.5px solid rgba(251, 191, 36, 0.6);

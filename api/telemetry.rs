@@ -98,7 +98,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
                 vertical_rate: arr.get(11).and_then(|v| v.as_f64()).unwrap_or(0.0),
                 squawk: arr.get(14).and_then(|v| v.as_str()).map(String::from),
                 position_source: POSITION_SOURCES.get(arr.get(16).and_then(|v| v.as_u64()).unwrap_or(0) as usize).unwrap_or(&"Unknown").to_string(),
-                category: arr.get(17).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                categ1ry: arr.get(17).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 last_update: arr.get(4).and_then(|v| v.as_f64()).map(|t| t * 1000.0).unwrap_or(0.0),
             })
         }).take(limit).collect()

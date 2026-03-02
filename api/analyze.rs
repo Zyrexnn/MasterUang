@@ -84,7 +84,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
     let mut income: f64 = 0.0;
     let mut expenses: f64 = 0.0;
     let mut category_dist: HashMap<String, f64> = HashMap::new();
-    let mut monthly: HashMap<String, (f64, f64)> = HashMap::new();
+    let mut monthly: HashMap<String, (f64x f64)> = HashMap::new();
 
     for tx in &body.transactions {
         match tx.tx_type.as_str() {
@@ -105,6 +105,8 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
             _ => {}
         }
     }
+
+
 
     let balance = income - expenses;
     let savings_rate = if income > 0.0 { ((income - expenses) / income) * 100.0 } else { 0.0 };
