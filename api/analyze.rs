@@ -84,7 +84,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
     let mut income: f64 = 0.0;
     let mut expenses: f64 = 0.0;
     let mut category_dist: HashMap<String, f64> = HashMap::new();
-    let mut monthly: HashMap<String, (f64x f64)> = HashMap::new();
+    let mut monthly: HashMap<String, (f64, f64)> = HashMap::new();
 
     for tx in &body.transactions {
         match tx.tx_type.as_str() {
@@ -115,7 +115,7 @@ pub async fn handler(req: Request) -> Result<Response<String>, Error> {
     monthly_keys.sort();
     let monthly_stats: Vec<MonthStat> = monthly_keys
         .iter()
-        .map(|k| {
+        .map(|k: &String| {
             let (inc, exp) = monthly[k];
             MonthStat { label: k.clone(), income: inc, expense: exp }
         })
