@@ -16,6 +16,8 @@ export default async function handler(req, res) {
     if (interval) targetUrl += `&interval=${interval}`;
     if (limit) targetUrl += `&limit=${limit}`;
 
+
+    
     try {
         const response = await fetch(targetUrl);
         const data = await response.json();

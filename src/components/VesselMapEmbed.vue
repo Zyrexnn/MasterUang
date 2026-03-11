@@ -51,8 +51,8 @@ onMounted(() => {
               width: 100% !important; 
               height: 100% !important; 
               border: none !important;
-              /* High contrast filter to make green markers pop against dark base */
-              filter: invert(0.9) hue-rotate(170deg) brightness(0.9) contrast(1.4) saturate(1.8);
+              /* Balanced Midnight Filter: dark, readable, non-inverted icons */
+              filter: invert(0.9) hue-rotate(180deg) brightness(0.9) contrast(1.1) saturate(1.1);
               background: #0B0E11 !important;
             }
           </style>
@@ -69,17 +69,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="vesselfinder-wrapper w-full h-full bg-[#0B0E11] relative overflow-hidden">
-    <!-- Container with negative margin top to hide the VesselFinder.com breadcrumb/header -->
-    <div ref="iframeContainer" class="w-full h-full absolute inset-0 -top-[30px]" style="height: calc(100% + 30px)"></div>
+  <div class="w-full h-full bg-[#0B0E11] relative overflow-hidden">
+    <!-- Main Iframe Container -->
+    <div 
+      ref="iframeContainer" 
+      class="w-full h-full absolute inset-0 -top-[35px] scale-[1.01]" 
+      style="height: calc(100% + 35px)"
+    ></div>
     
-    <!-- Branding Overlay for Bloomberg Aesthetic -->
-    <div class="absolute top-4 left-4 z-50 pointer-events-none">
-       <div class="px-3 py-1 bg-bloomberg-amber text-black text-[9px] font-black uppercase tracking-widest rounded shadow-lg flex items-center gap-2">
-         <div class="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></div>
-         Uplink Active: Sovereign Marine Stream
-       </div>
-    </div>
+    <!-- Shadow Gradient Overlays for Depth -->
+    <div class="absolute inset-0 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] z-10 transition-opacity"></div>
+    <div class="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-[#0B0E11] to-transparent z-10"></div>
+    <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#0B0E11] to-transparent z-10"></div>
   </div>
 </template>
 

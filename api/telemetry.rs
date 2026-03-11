@@ -31,6 +31,7 @@ struct TelemetryResponse {
     timestamp: u64,
 }
 
+
 const OPENSKY_URL: &str = "https://opensky-network.org/api/states/all";
 const POSITION_SOURCES: &[&str] = &["ADS-B", "ASTERIX", "MLAT", "FLARM"];
 
@@ -38,6 +39,7 @@ const POSITION_SOURCES: &[&str] = &["ADS-B", "ASTERIX", "MLAT", "FLARM"];
 async fn main() -> Result<(), Error> {
     run(service_fn(handler)).await
 }
+
 
 pub async fn handler(req: Request) -> Result<Response<String>, Error> {
     let query_str = req.uri().query().unwrap_or("");

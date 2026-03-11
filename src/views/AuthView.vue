@@ -78,15 +78,22 @@ const handleGuestEntry = async () => {
     </div>
 
     <div class="w-full max-w-md relative z-10">
-      <!-- Logo Branding -->
-      <div class="text-center mb-10 space-y-2">
-        <div class="inline-flex p-4 bg-bloomberg-amber/5 border border-bloomberg-amber/20 rounded-3xl mb-4 group transition-all hover:border-bloomberg-amber/40">
-           <Cpu class="w-10 h-10 text-bloomberg-amber animate-pulse" />
+      <div class="text-center mb-12 flex flex-col items-center">
+        <div class="relative group">
+           <!-- Refined Bloomberg Amber Glow -->
+           <div class="absolute inset-0 bg-[#F59E0B]/10 blur-[60px] rounded-full scale-90 group-hover:scale-110 transition-transform duration-1000"></div>
+           
+           <!-- Official Logo Lockup -->
+           <img 
+             src="/logomasteruang.png" 
+             alt="MasterUang Logo" 
+             class="h-32 w-auto object-contain relative z-10 filter brightness-110 drop-shadow-[0_0_30px_rgba(245,158,11,0.15)]" 
+           />
         </div>
-        <h1 class="text-4xl font-black text-white tracking-tighter uppercase italic">
-          Master<span class="text-bloomberg-amber">Uang</span>
-        </h1>
-        <p class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.4em]">Kelola Keuangan dengan Bijak</p>
+        <div class="mt-8 flex items-center justify-center gap-4 opacity-40">
+           <div class="w-1 h-1 rounded-full bg-zen-green animate-pulse"></div>
+           <p class="text-[8px] font-black text-white uppercase tracking-[0.8em] pl-[0.8em]">Operational Security Level 7</p>
+        </div>
       </div>
 
       <div class="terminal-card bg-[#0F1117]/80 backdrop-blur-2xl border border-white/5 p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">

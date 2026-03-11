@@ -303,15 +303,15 @@ onMounted(() => {
   <div class="min-h-screen bg-[#07090E] flex flex-col font-outfit text-white overflow-x-hidden">
     <!-- Top Global Header -->
     <header class="h-16 border-b border-white/5 bg-[#0F1117]/80 backdrop-blur-xl flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40">
-      <div class="flex items-center gap-4">
-        <div class="p-2 bg-bloomberg-amber/10 border border-bloomberg-amber/20 rounded-xl">
-           <ShieldCheck class="w-6 h-6 text-bloomberg-amber" />
-        </div>
-        <div>
-          <h1 class="text-lg font-black tracking-tighter uppercase italic">
-            Master<span class="text-bloomberg-amber">Uang</span> <span class="text-neutral-600 text-[10px] ml-2 not-italic tracking-[0.3em]">ADMIN</span>
-          </h1>
-          <p class="text-[8px] font-bold text-neutral-500 uppercase tracking-[0.4em]">Panel Kontrol Admin MasterUang</p>
+      <div class="flex items-center gap-6">
+        <img src="/logomasteruang.png" alt="MasterUang Logo" class="h-12 w-auto object-contain" />
+        <div class="h-6 w-[1px] bg-white/10 hidden md:block"></div>
+        <div class="hidden md:block">
+          <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em]">Central Intelligence Control</p>
+          <div class="flex items-center gap-2 mt-0.5">
+             <div class="w-1 h-1 rounded-full bg-rose-500"></div>
+             <span class="text-[8px] font-black text-rose-500 uppercase tracking-widest">Admin Authorization Level</span>
+          </div>
         </div>
       </div>
 

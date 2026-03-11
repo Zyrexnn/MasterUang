@@ -36,7 +36,7 @@ const navItems = [
   { name: 'Crypto', icon: Bitcoin, path: '/crypto' },
   { name: 'AI Advisor', icon: MessageSquare, path: '/ai-advisor', premium: true },
   { name: 'World News', icon: Newspaper, path: '/world-news' },
-  { name: 'Ship Tracker', icon: Anchor, path: '/ship-tracker', premium: true },
+  { name: 'Ship Tracker', icon: Anchor, path: '/ship-tracker' },
   { name: 'Flight Tracker', icon: Plane, path: '/flight-tracker', premium: true },
   { name: 'Profile', icon: Settings, path: '/profile' },
   { name: 'Admin', icon: ShieldCheck, path: '/admin', adminOnly: true },
@@ -138,18 +138,25 @@ router.afterEach((to) => {
       class="fixed inset-y-0 left-0 z-50 w-64 bg-[#11141D] border-r border-white/5 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 shadow-[20px_0_40px_rgba(0,0,0,0.3)]"
       :class="isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <div class="p-8 pb-10 flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-black text-bloomberg-amber tracking-tighter uppercase italic">
-            Master<span class="text-white opacity-80">Uang</span>
-          </h1>
-          <div class="flex items-center gap-2 mt-1">
-             <div class="w-1.5 h-1.5 rounded-full bg-zen-green animate-pulse"></div>
-             <p class="text-[9px] text-neutral-500 font-black tracking-[0.2em] uppercase">Security Level 7</p>
-          </div>
+      <div class="p-10 flex flex-col items-center justify-center">
+        <div class="relative">
+          <!-- Institutional Glow -->
+          <div class="absolute -inset-4 bg-bloomberg-amber/5 blur-3xl rounded-full opacity-50"></div>
+          <img 
+            src="/logomasteruang.png" 
+            alt="MasterUang" 
+            class="h-24 w-auto object-contain relative z-10" 
+          />
         </div>
-        <button @click="toggleMobileMenu" class="lg:hidden p-2 text-text-secondary">
-          <X class="w-6 h-6" />
+        
+        <!-- Subtle Status -->
+        <div class="flex items-center gap-2 mt-4 opacity-30">
+           <div class="w-1 h-1 rounded-full bg-zen-green animate-pulse"></div>
+           <p class="text-[6px] text-white font-black tracking-[0.5em] uppercase">System Verified</p>
+        </div>
+
+        <button @click="toggleMobileMenu" class="lg:hidden absolute top-10 right-6 p-2 text-neutral-600">
+          <X class="w-5 h-5" />
         </button>
       </div>
 

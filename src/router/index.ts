@@ -52,7 +52,7 @@ const router = createRouter({
             path: '/ship-tracker',
             name: 'ship-tracker',
             component: () => import('../views/ShipTrackerView.vue'),
-            meta: { requiresAuth: true, requiresPremium: true }
+            meta: { public: true }
         },
         {
             path: '/flight-tracker',
