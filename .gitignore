@@ -32,3 +32,5 @@ Cargo.lock
 .env.*
 !.env.example
 
+# Vite
+vite.config.ts.timestamp-*

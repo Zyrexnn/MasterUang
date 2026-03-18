@@ -67,18 +67,21 @@ CREATE TABLE IF NOT EXISTS public.admin_vault (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. Seed Data
--- Default Admin Access Key
-INSERT INTO public.redeem_codes (code, role, duration_days, description)
-VALUES ('MASTER-ADMIN-2026', 'admin', 9999, 'Super Admin Access')
+-- 6. Seed Data (CONTOH/PLACEHOLDER)
+-- NOTE: Jangan masukkan kode admin asli atau password di sini jika dipush ke repo publik.
+-- Gantilah kode di bawah dengan yang Anda inginkan.
+
+-- Contoh Default Admin Access Key
+INSERT INTO public.redeem_codes (code, role, duration_value, duration_unit, description)
+VALUES ('ISI_DENGAN_KODE_ADMIN_ANDA', 'admin', 9999, 'days', 'Super Admin Access')
 ON CONFLICT (code) DO NOTHING;
 
--- Default Premium Key
-INSERT INTO public.redeem_codes (code, role, duration_days, description)
-VALUES ('ZEN-PREMIUM-77', 'premium', 30, 'Standard 30 Days License')
+-- Contoh Default Premium Key
+INSERT INTO public.redeem_codes (code, role, duration_value, duration_unit, description)
+VALUES ('ISI_DENGAN_KODE_PREMIUM_ANDA', 'premium', 30, 'days', 'Standard 30 Days License')
 ON CONFLICT (code) DO NOTHING;
 
--- Requested Admin Login
+-- Contoh Admin Login (Gunakan password ter-hash di production!)
 INSERT INTO public.admin_vault (username, password)
-VALUES ('admin', '0721')
+VALUES ('admin_user', 'ISI_DENGAN_PASSWORD_ANDA')
 ON CONFLICT (username) DO NOTHING;

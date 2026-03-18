@@ -4,7 +4,7 @@ Arsitektur baru ini telah diperkuat untuk mencegah kebocoran data dan mematuhi k
 
 ## ✅ Implementasi Keamanan
 
-1. **No Client Exposure**: API Key (`a07b0...`) tidak lagi dipanggil di frontend (`services/api.ts`). Kode frontend hanya memanggil endpoint lokal `/api/cmc-proxy`.
+1. **No Client Exposure**: API Key tidak dipanggil di frontend (`services/api.ts`). Kode frontend hanya memanggil endpoint lokal `/api/cmc-proxy`.
 2. **Server-Side Injection**: API Key hanya disuntikkan di sisi server (Vite Proxy di Dev, Vercel Functions di Prod). Orang luar yang melakukan inspeksi kode browser tidak akan bisa melihat kunci Anda.
 3. **CORS Policy Bypass**: Dengan menggunakan proxy, permintaan berasal dari "domain yang sama" menurut browser, menghilangkan kesalahan *Cross-Origin Resource Sharing*.
 4. **Rate Limiting Protection**:
@@ -20,7 +20,7 @@ Agar fitur ini berfungsi di production:
 3. Pergi ke **Settings** > **Environment Variables**.
 4. Tambahkan :
    - Key: `CMC_API_KEY`
-   - Value: `a07b08e533494d3a91706474e46631f9`
+   - Value: `[MASUKKAN_CMC_API_KEY_ANDA]`
 5. Klik **Add** dan redeploy aplikasi.
 
 ## ⚠️ Penanganan Error
